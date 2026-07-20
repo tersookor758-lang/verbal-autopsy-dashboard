@@ -1,0 +1,131 @@
+/*
+=========================================
+Chart Styles
+Verbal Autopsy Outcome Dashboard
+=========================================
+*/
+
+
+/* ------------------------------
+   Chart Section
+------------------------------ */
+
+.chart-section {
+
+    margin-bottom: 30px;
+
+}
+
+
+
+/* ------------------------------
+   Chart Card
+------------------------------ */
+
+.chart-card {
+
+    height: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+
+/* ------------------------------
+   Chart Title
+------------------------------ */
+
+.chart-title {
+
+    font-weight: 600;
+
+    margin-bottom: 20px;
+
+}
+
+
+
+/* ------------------------------
+   Chart Container
+------------------------------ */
+
+.chart-container {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 350px;
+
+    min-height: 300px;
+
+}
+
+
+
+/* ------------------------------
+   Canvas
+------------------------------ */
+
+.chart-container canvas {
+
+    width: 100% !important;
+
+    height: 100% !important;
+
+}
+
+
+
+/* ------------------------------
+   Chart Legend
+------------------------------ */
+
+.chart-legend {
+
+    margin-top: 15px;
+
+}
+
+
+
+/* ------------------------------
+   Empty Chart Message
+------------------------------ */
+
+.chart-empty {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    height: 100%;
+
+    color: #6c757d;
+
+    font-size: 0.95rem;
+
+}
+
+
+
+/* ------------------------------
+   Responsive Charts
+------------------------------ */
+
+@media (max-width: 768px) {
+
+    .chart-container {
+
+        height: 280px;
+
+        min-height: 250px;
+
+    }
+
+}

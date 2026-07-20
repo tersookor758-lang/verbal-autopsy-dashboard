@@ -1,0 +1,189 @@
+<div class="row g-4 mb-4">
+
+    <div class="col-lg-3 col-md-6">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-body">
+
+                <h6 class="text-muted mb-2">
+                    Total Records
+                </h6>
+
+                <h2 class="fw-bold text-primary">
+                    {{ statistics.total_records }}
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="col-lg-3 col-md-6">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-body">
+
+                <h6 class="text-muted mb-2">
+                    Reporting States
+                </h6>
+
+                <h2 class="fw-bold text-success">
+                    {{ statistics.total_states }}
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="col-lg-3 col-md-6">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-body">
+
+                <h6 class="text-muted mb-2">
+                    Reporting Facilities
+                </h6>
+
+                <h2 class="fw-bold text-info">
+                    {{ statistics.total_facilities }}
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="col-lg-3 col-md-6">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-body">
+
+                <h6 class="text-muted mb-2">
+                    Latest Interview Year
+                </h6>
+
+                <h2 class="fw-bold text-dark">
+
+                    {% if statistics.latest_year %}
+
+                        {{ statistics.latest_year }}
+
+                    {% else %}
+
+                        -
+
+                    {% endif %}
+
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<div class="row g-4 mb-4">
+
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-header bg-white">
+
+                <strong>
+                    Sex Distribution
+                </strong>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="row text-center">
+
+                    <div class="col-6">
+
+                        <h6 class="text-muted">
+
+                            Male
+
+                        </h6>
+
+                        <h3 class="text-primary">
+
+                            {{ statistics.male_count }}
+
+                        </h3>
+
+                    </div>
+
+                    <div class="col-6">
+
+                        <h6 class="text-muted">
+
+                            Female
+
+                        </h6>
+
+                        <h3 class="text-danger">
+
+                            {{ statistics.female_count }}
+
+                        </h3>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="col-lg-6">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-header bg-white">
+
+                <strong>
+                    Reporting LGAs
+                </strong>
+
+            </div>
+
+            <div class="card-body d-flex align-items-center justify-content-center">
+
+                <h2 class="fw-bold text-secondary">
+
+                    {{ statistics.total_lgas }}
+
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

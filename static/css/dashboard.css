@@ -1,0 +1,181 @@
+/*
+=========================================
+Dashboard Layout Styles
+Verbal Autopsy Outcome Dashboard
+=========================================
+*/
+
+
+/* ------------------------------
+   Dashboard Container
+------------------------------ */
+
+.container-fluid {
+
+    padding-top: 20px;
+
+    padding-bottom: 30px;
+
+}
+
+
+
+/* ------------------------------
+   Dashboard Header
+------------------------------ */
+
+.dashboard-header {
+
+    margin-bottom: 30px;
+
+}
+
+
+.dashboard-header h2 {
+
+    font-weight: 700;
+
+    letter-spacing: -0.5px;
+
+}
+
+
+.dashboard-header p {
+
+    margin-bottom: 0;
+
+}
+
+
+
+/* ------------------------------
+   Statistics Cards
+------------------------------ */
+
+.stat-card {
+
+    transition: transform 0.2s ease,
+                box-shadow 0.2s ease;
+
+}
+
+
+
+.stat-card:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow: 0 8px 20px rgba(
+        0,
+        0,
+        0,
+        0.12
+    );
+
+}
+
+
+
+/* ------------------------------
+   Dashboard Cards
+------------------------------ */
+
+.dashboard-card {
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+}
+
+
+
+/* ------------------------------
+   Card Headers
+------------------------------ */
+
+.card-header {
+
+    background-color: white;
+
+    border-bottom: 1px solid #eeeeee;
+
+    padding: 15px 20px;
+
+    font-weight: 600;
+
+}
+
+
+
+/* ------------------------------
+   Dashboard Sections
+------------------------------ */
+
+.dashboard-section {
+
+    margin-bottom: 30px;
+
+}
+
+
+
+/* ------------------------------
+   Export Buttons
+------------------------------ */
+
+.export-buttons {
+
+    display: flex;
+
+    gap: 10px;
+
+    flex-wrap: wrap;
+
+}
+
+
+
+/* ------------------------------
+   Chart Containers
+------------------------------ */
+
+.chart-container {
+
+    min-height: 350px;
+
+}
+
+
+
+/* ------------------------------
+   Responsive Design
+------------------------------ */
+
+@media (max-width: 768px) {
+
+
+    .dashboard-header {
+
+        text-align: center;
+
+    }
+
+
+
+    .export-buttons {
+
+        justify-content: center;
+
+    }
+
+
+
+    .card-header {
+
+        text-align: center;
+
+    }
+
+
+}

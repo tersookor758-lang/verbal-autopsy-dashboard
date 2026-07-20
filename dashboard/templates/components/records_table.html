@@ -1,0 +1,159 @@
+<div class="card shadow-sm border-0 mb-4">
+
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+
+        <h5 class="mb-0">
+            Verbal Autopsy Records
+        </h5>
+
+        <span class="badge bg-primary">
+            {{ pagination.total }} Records
+        </span>
+
+    </div>
+
+
+
+    <div class="card-body p-0">
+
+        <div class="table-responsive">
+
+            <table class="table table-striped table-hover table-bordered align-middle mb-0">
+
+                <thead class="table-dark">
+
+                    <tr>
+
+                        <th>Patient ID</th>
+                        <th>State</th>
+                        <th>LGA</th>
+                        <th>Facility</th>
+                        <th>Age</th>
+                        <th>Sex</th>
+                        <th>Cause of Death</th>
+                        <th>ICD-10</th>
+                        <th>Interview Year</th>
+
+                    </tr>
+
+                </thead>
+
+
+
+                <tbody>
+
+                    {% for record in records %}
+
+                    <tr>
+
+                        <td>
+
+                            <strong>
+
+                                {{ record.patientid }}
+
+                            </strong>
+
+                        </td>
+
+                        <td>
+
+                            {{ record.state_name or "-" }}
+
+                        </td>
+
+                        <td>
+
+                            {{ record.lga_name or "-" }}
+
+                        </td>
+
+                        <td>
+
+                            {{ record.facility_name or "-" }}
+
+                        </td>
+
+                        <td>
+
+                            {{ record.age if record.age is not none else "-" }}
+
+                        </td>
+
+                        <td>
+
+                            {% if record.sex == "Male" %}
+
+                                <span class="badge bg-primary">
+
+                                    Male
+
+                                </span>
+
+                            {% elif record.sex == "Female" %}
+
+                                <span class="badge bg-danger">
+
+                                    Female
+
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-secondary">
+
+                                    -
+
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {{ record.cause_of_death or "-" }}
+
+                        </td>
+
+                        <td>
+
+                            {{ record.icd10 or "-" }}
+
+                        </td>
+
+                        <td>
+
+                            {{ record.interview_year or "-" }}
+
+                        </td>
+
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+
+                        <td colspan="9" class="text-center py-4">
+
+                            <h6 class="text-muted">
+
+                                No records found.
+
+                            </h6>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

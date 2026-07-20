@@ -1,0 +1,238 @@
+<div class="card shadow-sm border-0 mb-4">
+
+    <div class="card-header bg-white">
+
+        <h5 class="mb-0">
+            Filter Records
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <form method="GET">
+
+            <div class="row">
+
+                <div class="col-lg-3 col-md-6 mb-3">
+
+                    <label class="form-label">
+                        State
+                    </label>
+
+                    <select
+                        id="state-select"
+                        name="state"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All States
+                        </option>
+
+                        {% for state in states %}
+
+                        <option
+                            value="{{ state }}"
+                            {% if request.args.get("state") == state %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ state }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+
+                <div class="col-lg-3 col-md-6 mb-3">
+
+                    <label class="form-label">
+                        LGA
+                    </label>
+
+                    <select
+                        id="lga-select"
+                        name="lga"
+                        class="form-select"
+                        {% if not request.args.get("state") %}
+                            disabled
+                        {% endif %}
+                    >
+
+                        <option value="">
+                            Select a State First
+                        </option>
+
+                        {% for lga in lgas %}
+
+                        <option
+                            value="{{ lga }}"
+                            {% if request.args.get("lga") == lga %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ lga }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+
+                <div class="col-lg-3 col-md-6 mb-3">
+
+                    <label class="form-label">
+                        Facility
+                    </label>
+
+                    <select
+                        name="facility"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All Facilities
+                        </option>
+
+                        {% for facility in facilities %}
+
+                        <option
+                            value="{{ facility }}"
+                            {% if request.args.get("facility") == facility %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ facility }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+
+                <div class="col-lg-3 col-md-6 mb-3">
+
+                    <label class="form-label">
+                        Cause of Death
+                    </label>
+
+                    <select
+                        name="cause"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All Causes
+                        </option>
+
+                        {% for cause in causes %}
+
+                        <option
+                            value="{{ cause }}"
+                            {% if request.args.get("cause") == cause %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ cause }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="row">
+
+                <div class="col-lg-3 col-md-6 mb-3">
+
+                    <label class="form-label">
+                        Interview Year
+                    </label>
+
+                    <select
+                        name="year"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All Years
+                        </option>
+
+                        {% for year in years %}
+
+                        <option
+                            value="{{ year }}"
+                            {% if request.args.get("year") == year|string %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ year }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+
+                <div class="col-lg-3 col-md-6 mb-3">
+
+                    <label class="form-label">
+                        Patient ID
+                    </label>
+
+                    <input
+                        type="text"
+                        name="patient"
+                        class="form-control"
+                        placeholder="Search Patient ID"
+                        value="{{ request.args.get('patient', '') }}"
+                    >
+
+                </div>
+
+            </div>
+
+
+
+            <div class="mt-2">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    Apply Filters
+                </button>
+
+                <a
+                    href="{{ url_for('dashboard.index') }}"
+                    class="btn btn-secondary"
+                >
+                    Reset
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
