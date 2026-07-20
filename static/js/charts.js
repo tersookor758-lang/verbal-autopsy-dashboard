@@ -426,6 +426,7 @@ window.dashboardStatistics
 
     }
 
+    
     /*
     ------------------------------------------------------
     Initialize
