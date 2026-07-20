@@ -5,7 +5,12 @@ from flask import request, current_app, send_file
 from flask_restx import Namespace, Resource
 
 from api.api import api
-from api.models import verbal_autopsy_model
+from api.models import (
+    verbal_autopsy_model,
+    upload_response,
+    error_model
+)
+
 from api.parsers import upload_parser
 
 from extensions import db
@@ -21,22 +26,37 @@ STATES_FILE = BASE_DIR / "resources" / "raw" / "states.json"
 LGAS_FILE = BASE_DIR / "resources" / "raw" / "lgas.json"
 
 
+
 def load_states():
 
-    with open(STATES_FILE, "r", encoding="utf-8") as file:
+    with open(
+        STATES_FILE,
+        "r",
+        encoding="utf-8"
+    ) as file:
+
         return json.load(file)
+
 
 
 def load_lgas():
 
-    with open(LGAS_FILE, "r", encoding="utf-8") as file:
+    with open(
+        LGAS_FILE,
+        "r",
+        encoding="utf-8"
+    ) as file:
+
         return json.load(file)
+
 
 
 verbal_autopsy_ns = Namespace(
     "verbal-autopsy",
-    description="Verbal Autopsy Record Operations"
+    description="Operations for Verbal Autopsy records"
 )
+
+
 
 api.add_namespace(
     verbal_autopsy_ns,
@@ -44,11 +64,24 @@ api.add_namespace(
 )
 
 
+
+# ==========================================================
+# LOCATION LOOKUP
+# ==========================================================
+
 @verbal_autopsy_ns.route("/locations")
 class Locations(Resource):
 
     @verbal_autopsy_ns.doc(
-        description="Retrieve Nigerian states or LGAs"
+        description="""
+        Retrieve Nigerian geographical information.
+
+        Without a state parameter:
+        - Returns all states.
+
+        With a state parameter:
+        - Returns all LGAs belonging to that state.
+        """
     )
     def get(self):
 
@@ -57,34 +90,47 @@ class Locations(Resource):
             ""
         ).strip()
 
+
         if state:
 
             return {
+
                 "state": state,
+
                 "lgas": load_lgas().get(
                     state,
                     []
                 )
+
             }, 200
 
+
         return {
+
             "states": load_states()
+
         }, 200
 
 
-# ------------------------------------------------------------------
-# Existing endpoints below (keep the rest of your file exactly as-is)
-# ------------------------------------------------------------------
+
+
+# ==========================================================
+# LIST RECORDS
+# ==========================================================
 
 @verbal_autopsy_ns.route("/")
 class VerbalAutopsyList(Resource):
 
     @verbal_autopsy_ns.doc(
-        description="Retrieve all verbal autopsy records"
+        description="Retrieve all Verbal Autopsy records"
+    )
+    @verbal_autopsy_ns.marshal_list_with(
+        verbal_autopsy_model
     )
     def get(self):
 
         records = VerbalAutopsy.query.all()
+
 
         return [
 
@@ -95,20 +141,37 @@ class VerbalAutopsyList(Resource):
         ], 200
 
 
+
+
+# ==========================================================
+# SINGLE RECORD OPERATIONS
+# ==========================================================
+
 @verbal_autopsy_ns.route("/<string:patientid>")
 class VerbalAutopsyDetail(Resource):
 
+
     @verbal_autopsy_ns.doc(
-        description="Retrieve a single record by patient ID"
+        description="Retrieve a record using patient ID"
+    )
+    @verbal_autopsy_ns.marshal_with(
+        verbal_autopsy_model
+    )
+    @verbal_autopsy_ns.response(
+        404,
+        "Record not found",
+        error_model
     )
     def get(
         self,
         patientid
     ):
 
+
         record = VerbalAutopsy.query.filter_by(
             patientid=patientid
         ).first()
+
 
         if not record:
 
@@ -118,22 +181,35 @@ class VerbalAutopsyDetail(Resource):
 
             }, 404
 
+
         return record.to_dict(), 200
+
+
 
     @verbal_autopsy_ns.expect(
         verbal_autopsy_model
     )
+    @verbal_autopsy_ns.marshal_with(
+        verbal_autopsy_model
+    )
+    @verbal_autopsy_ns.response(
+        404,
+        "Record not found",
+        error_model
+    )
     @verbal_autopsy_ns.doc(
-        description="Update an existing record"
+        description="Update an existing Verbal Autopsy record"
     )
     def put(
         self,
         patientid
     ):
 
+
         record = VerbalAutopsy.query.filter_by(
             patientid=patientid
         ).first()
+
 
         if not record:
 
@@ -143,7 +219,9 @@ class VerbalAutopsyDetail(Resource):
 
             }, 404
 
+
         data = request.json
+
 
         for key, value in data.items():
 
@@ -158,21 +236,33 @@ class VerbalAutopsyDetail(Resource):
                     value
                 )
 
+
         db.session.commit()
+
 
         return record.to_dict(), 200
 
+
+
+
+    @verbal_autopsy_ns.response(
+        404,
+        "Record not found",
+        error_model
+    )
     @verbal_autopsy_ns.doc(
-        description="Delete a record"
+        description="Delete a Verbal Autopsy record"
     )
     def delete(
         self,
         patientid
     ):
 
+
         record = VerbalAutopsy.query.filter_by(
             patientid=patientid
         ).first()
+
 
         if not record:
 
@@ -182,11 +272,14 @@ class VerbalAutopsyDetail(Resource):
 
             }, 404
 
+
+
         db.session.delete(
             record
         )
 
         db.session.commit()
+
 
         return {
 
@@ -195,22 +288,51 @@ class VerbalAutopsyDetail(Resource):
         }, 200
 
 
+
+
+# ==========================================================
+# UPLOAD
+# ==========================================================
+
 @verbal_autopsy_ns.route("/upload")
 class UploadRecords(Resource):
+
 
     @verbal_autopsy_ns.expect(
         upload_parser
     )
-    @verbal_autopsy_ns.doc(
-        description="Upload CSV, Excel or JSON records and validate them"
+    @verbal_autopsy_ns.response(
+        200,
+        "Upload completed successfully",
+        upload_response
     )
-    def post(
-        self
-    ):
+    @verbal_autopsy_ns.response(
+        400,
+        "Invalid upload",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        500,
+        "Upload failed",
+        error_model
+    )
+    @verbal_autopsy_ns.doc(
+        description="""
+        Upload Verbal Autopsy datasets.
+
+        Supported formats:
+        - CSV
+        - Excel (.xlsx/.xls)
+        - JSON
+        """
+    )
+    def post(self):
+
 
         uploaded_file = request.files.get(
             "file"
         )
+
 
         if not uploaded_file:
 
@@ -219,6 +341,8 @@ class UploadRecords(Resource):
                 "message": "No file uploaded"
 
             }, 400
+
+
 
         allowed_extensions = {
 
@@ -230,17 +354,25 @@ class UploadRecords(Resource):
 
         }
 
+
+
         filename = uploaded_file.filename.lower()
 
+
         extension = "." + filename.split(".")[-1]
+
+
 
         if extension not in allowed_extensions:
 
             return {
 
-                "message": "Unsupported file format. Upload CSV, Excel or JSON."
+                "message":
+                "Unsupported file format. Upload CSV, Excel or JSON."
 
             }, 400
+
+
 
         try:
 
@@ -248,15 +380,20 @@ class UploadRecords(Resource):
                 uploaded_file
             )
 
+
             return {
 
-                "message": "Upload completed successfully",
+                "message":
+                "Upload completed successfully",
 
                 "summary": result
 
             }, 200
 
+
+
         except ValueError as error:
+
 
             return {
 
@@ -264,29 +401,54 @@ class UploadRecords(Resource):
 
             }, 400
 
+
+
         except Exception as error:
+
 
             current_app.logger.exception(
                 error
             )
 
+
             return {
 
-                "message": "Upload failed. Please check your file and try again."
+                "message":
+                "Upload failed. Please check your file and try again."
 
             }, 500
 
 
+
+
+# ==========================================================
+# EXPORT
+# ==========================================================
+
 @verbal_autopsy_ns.route("/export/<string:file_type>")
 class ExportRecords(Resource):
 
+
     @verbal_autopsy_ns.doc(
-        description="Export all Verbal Autopsy records"
+        description="""
+        Export all Verbal Autopsy records.
+
+        Supported export formats:
+        - csv
+        - excel
+        - json
+        """
+    )
+    @verbal_autopsy_ns.response(
+        400,
+        "Invalid export format",
+        error_model
     )
     def get(
         self,
         file_type
     ):
+
 
         try:
 
@@ -300,6 +462,7 @@ class ExportRecords(Resource):
 
             )
 
+
         except ValueError as error:
 
             return {
@@ -308,28 +471,37 @@ class ExportRecords(Resource):
 
             }, 400
 
+
+
         download_names = {
 
-            "csv": "verbal_autopsy.csv",
+            "csv":
+            "verbal_autopsy.csv",
 
-            "excel": "verbal_autopsy.xlsx",
+            "excel":
+            "verbal_autopsy.xlsx",
 
-            "json": "verbal_autopsy.json"
+            "json":
+            "verbal_autopsy.json"
 
         }
+
+
 
         mime_types = {
 
-            "csv": "text/csv",
+            "csv":
+            "text/csv",
 
-            "excel": (
-                "application/vnd.openxmlformats-"
-                "officedocument.spreadsheetml.sheet"
-            ),
+            "excel":
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 
-            "json": "application/json"
+            "json":
+            "application/json"
 
         }
+
+
 
         return send_file(
 

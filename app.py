@@ -25,6 +25,7 @@ def create_app():
 
     app.config.from_object(Config)
 
+    # Initialize database
     db.init_app(app)
 
     # Import routes after extensions are initialized
@@ -32,9 +33,13 @@ def create_app():
     import api.api
     import api.routes
 
-    # Register blueprints
-    app.register_blueprint(dashboard_bp)
+    # Register dashboard blueprint
+    app.register_blueprint(
+        dashboard_bp
+    )
 
+    # Register API blueprint
+    # Flask-RESTX Swagger UI is attached through this blueprint
     app.register_blueprint(
         api_bp,
         url_prefix="/api"
@@ -42,6 +47,7 @@ def create_app():
 
     # Create database tables
     with app.app_context():
+
         db.create_all()
 
     return app
