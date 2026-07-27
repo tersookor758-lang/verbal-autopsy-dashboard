@@ -10,7 +10,7 @@
                     Export Records
                 </h5>
 
-                <p class="text-muted mb-0">
+                <p class="mb-0 theme-muted">
                     Download all Verbal Autopsy records in your preferred format.
                 </p>
 
@@ -25,14 +25,12 @@
                     Export CSV
                 </a>
 
-
                 <a
                     href="{{ url_for('api.verbal-autopsy_export_records', file_type='excel') }}"
                     class="btn btn-primary me-2 mb-2"
                 >
                     Export Excel
                 </a>
-
 
                 <a
                     href="{{ url_for('api.verbal-autopsy_export_records', file_type='json') }}"
