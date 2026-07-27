@@ -5,6 +5,23 @@ Verbal Autopsy Outcome Dashboard
 =========================================
 */
 
+/* ------------------------------
+   Theme Variables
+------------------------------ */
+
+:root {
+
+    --chart-title: #212529;
+    --chart-empty: #6c757d;
+
+}
+
+html[data-theme="dark"] {
+
+    --chart-title: #ffffff;
+    --chart-empty: #c7c7c7;
+
+}
 
 /* ------------------------------
    Chart Section
@@ -15,8 +32,6 @@ Verbal Autopsy Outcome Dashboard
     margin-bottom: 30px;
 
 }
-
-
 
 /* ------------------------------
    Chart Card
@@ -32,8 +47,6 @@ Verbal Autopsy Outcome Dashboard
 
 }
 
-
-
 /* ------------------------------
    Chart Title
 ------------------------------ */
@@ -44,9 +57,9 @@ Verbal Autopsy Outcome Dashboard
 
     margin-bottom: 20px;
 
+    color: var(--chart-title);
+
 }
-
-
 
 /* ------------------------------
    Chart Container
@@ -64,8 +77,6 @@ Verbal Autopsy Outcome Dashboard
 
 }
 
-
-
 /* ------------------------------
    Canvas
 ------------------------------ */
@@ -78,8 +89,6 @@ Verbal Autopsy Outcome Dashboard
 
 }
 
-
-
 /* ------------------------------
    Chart Legend
 ------------------------------ */
@@ -89,8 +98,6 @@ Verbal Autopsy Outcome Dashboard
     margin-top: 15px;
 
 }
-
-
 
 /* ------------------------------
    Empty Chart Message
@@ -106,13 +113,11 @@ Verbal Autopsy Outcome Dashboard
 
     height: 100%;
 
-    color: #6c757d;
+    color: var(--chart-empty);
 
     font-size: 0.95rem;
 
 }
-
-
 
 /* ------------------------------
    Responsive Charts
