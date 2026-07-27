@@ -5,6 +5,31 @@ Verbal Autopsy Outcome Dashboard
 =========================================
 */
 
+/* ------------------------------
+   Theme Variables
+------------------------------ */
+
+:root {
+
+    --table-bg: #ffffff;
+    --table-header: #ffffff;
+    --table-row: #fafafa;
+    --table-hover: #eef5ff;
+    --table-text: #212529;
+    --table-border: #dee2e6;
+
+}
+
+html[data-theme="dark"] {
+
+    --table-bg: #1f1f1f;
+    --table-header: #2b2b2b;
+    --table-row: #242424;
+    --table-hover: #333333;
+    --table-text: #f1f1f1;
+    --table-border: #444444;
+
+}
 
 /* ------------------------------
    Table Container
@@ -18,8 +43,6 @@ Verbal Autopsy Outcome Dashboard
 
 }
 
-
-
 /* ------------------------------
    Table
 ------------------------------ */
@@ -32,9 +55,13 @@ Verbal Autopsy Outcome Dashboard
 
     white-space: nowrap;
 
+    background: var(--table-bg);
+
+    color: var(--table-text);
+
+    border-color: var(--table-border);
+
 }
-
-
 
 /* ------------------------------
    Table Header
@@ -46,7 +73,11 @@ Verbal Autopsy Outcome Dashboard
 
     top: 0;
 
-    background: white;
+    background: var(--table-header);
+
+    color: var(--table-text);
+
+    border-color: var(--table-border);
 
     z-index: 1;
 
@@ -58,8 +89,6 @@ Verbal Autopsy Outcome Dashboard
 
 }
 
-
-
 /* ------------------------------
    Table Body
 ------------------------------ */
@@ -70,9 +99,13 @@ Verbal Autopsy Outcome Dashboard
 
     padding: 0.8rem;
 
+    color: var(--table-text);
+
+    background: var(--table-bg);
+
+    border-color: var(--table-border);
+
 }
-
-
 
 /* ------------------------------
    Zebra Rows
@@ -80,11 +113,9 @@ Verbal Autopsy Outcome Dashboard
 
 .table tbody tr:nth-child(even) {
 
-    background-color: #fafafa;
+    background: var(--table-row);
 
 }
-
-
 
 /* ------------------------------
    Table Hover
@@ -92,11 +123,9 @@ Verbal Autopsy Outcome Dashboard
 
 .table-hover tbody tr:hover {
 
-    background-color: #eef5ff;
+    background: var(--table-hover);
 
 }
-
-
 
 /* ------------------------------
    Patient ID
@@ -107,8 +136,6 @@ Verbal Autopsy Outcome Dashboard
     font-weight: 600;
 
 }
-
-
 
 /* ------------------------------
    Empty Table Message
@@ -122,8 +149,6 @@ Verbal Autopsy Outcome Dashboard
 
 }
 
-
-
 /* ------------------------------
    Responsive
 ------------------------------ */
@@ -132,7 +157,7 @@ Verbal Autopsy Outcome Dashboard
 
     .table {
 
-        font-size: 0.90rem;
+        font-size: .90rem;
 
     }
 
