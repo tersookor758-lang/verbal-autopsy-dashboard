@@ -5,6 +5,27 @@ Global Styles
 =========================================
 */
 
+/* ------------------------------
+   Theme Variables
+------------------------------ */
+
+:root {
+
+    --bg-color: #f8f9fa;
+    --text-color: #212529;
+    --heading-color: #212529;
+    --paragraph-color: #6c757d;
+
+}
+
+html[data-theme="dark"] {
+
+    --bg-color: #121212;
+    --text-color: #f1f1f1;
+    --heading-color: #ffffff;
+    --paragraph-color: #c7c7c7;
+
+}
 
 /* ------------------------------
    General Page
@@ -12,11 +33,11 @@ Global Styles
 
 body {
 
-    background-color: #f8f9fa;
+    background-color: var(--bg-color);
 
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 
-    color: #212529;
+    color: var(--text-color);
 
     margin: 0;
 
@@ -30,9 +51,11 @@ body {
 
     -webkit-font-smoothing: antialiased;
 
+    transition:
+        background-color .3s ease,
+        color .3s ease;
+
 }
-
-
 
 /* ------------------------------
    Main Content
@@ -43,8 +66,6 @@ body {
     flex: 1;
 
 }
-
-
 
 /* ------------------------------
    Headings
@@ -59,11 +80,11 @@ h6 {
 
     font-weight: 600;
 
-    color: #212529;
+    color: var(--heading-color);
+
+    transition: color .3s ease;
 
 }
-
-
 
 /* ------------------------------
    Paragraphs
@@ -71,11 +92,11 @@ h6 {
 
 p {
 
-    color: #6c757d;
+    color: var(--paragraph-color);
+
+    transition: color .3s ease;
 
 }
-
-
 
 /* ------------------------------
    Links
@@ -87,14 +108,11 @@ a {
 
 }
 
-
 a:hover {
 
-    opacity: 0.85;
+    opacity: .85;
 
 }
-
-
 
 /* ------------------------------
    Cards
@@ -104,11 +122,9 @@ a:hover {
 
     border-radius: 12px;
 
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
 
 }
-
-
 
 /* ------------------------------
    Buttons
@@ -118,18 +134,15 @@ a:hover {
 
     border-radius: 8px;
 
-    transition: all 0.2s ease;
+    transition: all .2s ease;
 
 }
-
 
 .btn:hover {
 
     transform: translateY(-1px);
 
 }
-
-
 
 /* ------------------------------
    Tables
@@ -141,8 +154,6 @@ a:hover {
 
 }
 
-
-
 /* ------------------------------
    Form Controls
 ------------------------------ */
@@ -152,11 +163,11 @@ a:hover {
 
     border-radius: 8px;
 
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease;
 
 }
-
-
 
 /* ------------------------------
    Badges
@@ -164,11 +175,9 @@ a:hover {
 
 .badge {
 
-    font-size: 0.85rem;
+    font-size: .85rem;
 
 }
-
-
 
 /* ------------------------------
    Footer
@@ -182,6 +191,8 @@ footer {
 
     text-align: center;
 
-    color: #6c757d;
+    color: var(--paragraph-color);
+
+    transition: color .3s ease;
 
 }
