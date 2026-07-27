@@ -196,3 +196,18 @@ footer {
     transition: color .3s ease;
 
 }
+/* =========================================
+   Theme Utility Classes
+========================================= */
+
+.theme-muted {
+
+    color: var(--paragraph-color) !important;
+
+}
+
+.theme-text {
+
+    color: var(--text-color) !important;
+
+}
