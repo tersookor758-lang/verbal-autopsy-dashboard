@@ -4,25 +4,26 @@ Verbal Autopsy Outcome Dashboard
 File: static/js/charts.js
 =========================================================
 
-This file renders all dashboard charts using Chart.js.
-
 Charts:
 1. Top States (Bar)
 2. Top Causes (Doughnut)
 3. Sex Distribution (Pie)
 4. Yearly Trend (Line)
 
-Data Source:
-window.dashboardStatistics
+Now supports:
+✓ Light Mode
+✓ Dark Mode
+✓ Automatic theme switching
 =========================================================
 */
 
 (function () {
+
     "use strict";
 
     /*
     ------------------------------------------------------
-    Ensure statistics exist
+    Dashboard Statistics
     ------------------------------------------------------
     */
 
@@ -30,7 +31,7 @@ window.dashboardStatistics
 
     /*
     ------------------------------------------------------
-    Store chart instances
+    Chart Instances
     ------------------------------------------------------
     */
 
@@ -41,34 +42,7 @@ window.dashboardStatistics
 
     /*
     ------------------------------------------------------
-    Utility Functions
-    ------------------------------------------------------
-    */
-
-    function destroyChart(chart) {
-        if (chart) {
-            chart.destroy();
-        }
-    }
-
-    function getCanvas(id) {
-        const canvas = document.getElementById(id);
-
-        if (!canvas) {
-            console.warn(`Canvas '${id}' not found.`);
-            return null;
-        }
-
-        return canvas.getContext("2d");
-    }
-
-    function emptyArray(value) {
-        return Array.isArray(value) ? value : [];
-    }
-
-    /*
-    ------------------------------------------------------
-    Chart Colors
+    Color Palette
     ------------------------------------------------------
     */
 
@@ -87,146 +61,194 @@ window.dashboardStatistics
 
     /*
     ------------------------------------------------------
-    STATE BAR CHART
+    Theme Detection
     ------------------------------------------------------
     */
 
-    function renderStateChart() {
+    function isDarkMode() {
 
-        const ctx = getCanvas("stateChart");
+        return (
+            document.documentElement.getAttribute("data-theme") === "dark"
+        );
 
-        if (!ctx) return;
+    }
 
-        destroyChart(stateChart);
+    function getChartTheme() {
 
-        const topStates = emptyArray(stats.top_states);
+        if (isDarkMode()) {
 
-        const labels = topStates.map(item => item.state);
+            return {
 
-        const values = topStates.map(item => item.count);
+                text: "#f8f9fa",
 
-        stateChart = new Chart(ctx, {
+                grid: "#444",
 
-            type: "bar",
+                border: "#666"
 
-            data: {
+            };
 
-                labels: labels,
+        }
 
-                datasets: [
+        return {
 
-                    {
-                        label: "Records",
+            text: "#212529",
 
-                        data: values,
+            grid: "#dddddd",
 
-                        backgroundColor: palette,
+            border: "#cccccc"
 
-                        borderWidth: 1
+        };
+
+    }
+
+    /*
+    ------------------------------------------------------
+    Utility Functions
+    ------------------------------------------------------
+    */
+
+    function destroyChart(chart) {
+
+        if (chart) {
+
+            chart.destroy();
+
+        }
+
+    }
+
+    function getCanvas(id) {
+
+        const canvas = document.getElementById(id);
+
+        if (!canvas) {
+
+            console.warn(`Canvas '${id}' not found.`);
+
+            return null;
+
+        }
+
+        return canvas.getContext("2d");
+
+    }
+
+    function emptyArray(value) {
+
+        return Array.isArray(value)
+            ? value
+            : [];
+
+    }
+    /*
+------------------------------------------------------
+STATE BAR CHART
+------------------------------------------------------
+*/
+
+function renderStateChart() {
+
+    const ctx = getCanvas("stateChart");
+
+    if (!ctx) return;
+
+    destroyChart(stateChart);
+
+    const theme = getChartTheme();
+
+    const topStates = emptyArray(stats.top_states);
+
+    const labels = topStates.map(item => item.state);
+
+    const values = topStates.map(item => item.count);
+
+    stateChart = new Chart(ctx, {
+
+        type: "bar",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [
+
+                {
+
+                    label: "Records",
+
+                    data: values,
+
+                    backgroundColor: palette,
+
+                    borderWidth: 1
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+
+                    display: false,
+
+                    labels: {
+
+                        color: theme.text
+
                     }
 
-                ]
+                },
+
+                tooltip: {
+
+                    enabled: true
+
+                }
+
             },
 
-            options: {
+            scales: {
 
-                responsive: true,
+                x: {
 
-                maintainAspectRatio: false,
+                    ticks: {
 
-                plugins: {
-
-                    legend: {
-
-                        display: false
+                        color: theme.text
 
                     },
 
-                    tooltip: {
+                    grid: {
 
-                        enabled: true
+                        color: theme.grid
 
                     }
 
                 },
 
-                scales: {
+                y: {
 
-                    y: {
+                    beginAtZero: true,
 
-                        beginAtZero: true,
+                    ticks: {
 
-                        ticks: {
+                        precision: 0,
 
-                            precision: 0
+                        color: theme.text
 
-                        }
+                    },
 
-                    }
+                    grid: {
 
-                }
-
-            }
-
-        });
-
-    }
-
-    /*
-    ------------------------------------------------------
-    TOP CAUSES DOUGHNUT
-    ------------------------------------------------------
-    */
-
-    function renderCauseChart() {
-
-        const ctx = getCanvas("causeChart");
-
-        if (!ctx) return;
-
-        destroyChart(causeChart);
-
-        const causes = emptyArray(stats.top_causes);
-
-        const labels = causes.map(item => item.cause);
-
-        const values = causes.map(item => item.count);
-
-        causeChart = new Chart(ctx, {
-
-            type: "doughnut",
-
-            data: {
-
-                labels: labels,
-
-                datasets: [
-
-                    {
-
-                        data: values,
-
-                        backgroundColor: palette,
-
-                        borderWidth: 1
-
-                    }
-
-                ]
-
-            },
-
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-
-                plugins: {
-
-                    legend: {
-
-                        position: "bottom"
+                        color: theme.grid
 
                     }
 
@@ -234,217 +256,369 @@ window.dashboardStatistics
 
             }
 
-        });
-
-    }
-
-    /*
-    ------------------------------------------------------
-    SEX PIE CHART
-    ------------------------------------------------------
-    */
-
-    function renderSexChart() {
-
-        const ctx = getCanvas("sexChart");
-
-        if (!ctx) return;
-
-        destroyChart(sexChart);
-
-        sexChart = new Chart(ctx, {
-
-            type: "pie",
-
-            data: {
-
-                labels: [
-
-                    "Male",
-
-                    "Female"
-
-                ],
-
-                datasets: [
-
-                    {
-
-                        data: [
-
-                            stats.male_count || 0,
-
-                            stats.female_count || 0
-
-                        ],
-
-                        backgroundColor: [
-
-                            "#0d6efd",
-
-                            "#dc3545"
-
-                        ],
-
-                        borderWidth: 1
-
-                    }
-
-                ]
-
-            },
-
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-
-                plugins: {
-
-                    legend: {
-
-                        position: "bottom"
-
-                    }
-
-                }
-
-            }
-
-        });
-
-    }
-
-    /*
-    ------------------------------------------------------
-    YEARLY TREND LINE
-    ------------------------------------------------------
-    */
-
-    function renderYearChart() {
-
-        const ctx = getCanvas("yearChart");
-
-        if (!ctx) return;
-
-        destroyChart(yearChart);
-
-        const yearly = emptyArray(stats.yearly_trend);
-
-        const labels = yearly.map(item => item.year);
-
-        const values = yearly.map(item => item.count);
-
-        yearChart = new Chart(ctx, {
-
-            type: "line",
-
-            data: {
-
-                labels: labels,
-
-                datasets: [
-
-                    {
-
-                        label: "Records",
-
-                        data: values,
-
-                        fill: false,
-
-                        tension: 0.3,
-
-                        borderColor: "#0d6efd",
-
-                        backgroundColor: "#0d6efd",
-
-                        pointRadius: 4,
-
-                        pointHoverRadius: 6
-
-                    }
-
-                ]
-
-            },
-
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-
-                plugins: {
-
-                    legend: {
-
-                        display: true
-
-                    }
-
-                },
-
-                scales: {
-
-                    y: {
-
-                        beginAtZero: true,
-
-                        ticks: {
-
-                            precision: 0
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        });
-
-    }
-
-    /*
-    ------------------------------------------------------
-    PUBLIC FUNCTION
-    ------------------------------------------------------
-    */
-
-    function renderAllCharts() {
-
-        renderStateChart();
-
-        renderCauseChart();
-
-        renderSexChart();
-
-        renderYearChart();
-
-    }
-
-    
-    /*
-    ------------------------------------------------------
-    Initialize
-    ------------------------------------------------------
-    */
-
-    document.addEventListener("DOMContentLoaded", function () {
-
-        renderAllCharts();
+        }
 
     });
 
-    /*
-    ------------------------------------------------------
-    Optional Global Access
-    ------------------------------------------------------
-    */
+}
 
-    window.renderDashboardCharts = renderAllCharts;
+/*
+------------------------------------------------------
+TOP CAUSES DOUGHNUT
+------------------------------------------------------
+*/
+
+function renderCauseChart() {
+
+    const ctx = getCanvas("causeChart");
+
+    if (!ctx) return;
+
+    destroyChart(causeChart);
+
+    const theme = getChartTheme();
+
+    const causes = emptyArray(stats.top_causes);
+
+    const labels = causes.map(item => item.cause);
+
+    const values = causes.map(item => item.count);
+
+    causeChart = new Chart(ctx, {
+
+        type: "doughnut",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [
+
+                {
+
+                    data: values,
+
+                    backgroundColor: palette,
+
+                    borderWidth: 1
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+
+                    position: "bottom",
+
+                    labels: {
+
+                        color: theme.text
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    });
+
+}
+/*
+------------------------------------------------------
+SEX PIE CHART
+------------------------------------------------------
+*/
+
+function renderSexChart() {
+
+    const ctx = getCanvas("sexChart");
+
+    if (!ctx) return;
+
+    destroyChart(sexChart);
+
+    const theme = getChartTheme();
+
+    sexChart = new Chart(ctx, {
+
+        type: "pie",
+
+        data: {
+
+            labels: [
+
+                "Male",
+
+                "Female"
+
+            ],
+
+            datasets: [
+
+                {
+
+                    data: [
+
+                        stats.male_count || 0,
+
+                        stats.female_count || 0
+
+                    ],
+
+                    backgroundColor: [
+
+                        "#0d6efd",
+
+                        "#dc3545"
+
+                    ],
+
+                    borderWidth: 1
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+
+                    position: "bottom",
+
+                    labels: {
+
+                        color: theme.text
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    });
+
+}
+
+/*
+------------------------------------------------------
+YEARLY TREND LINE
+------------------------------------------------------
+*/
+
+function renderYearChart() {
+
+    const ctx = getCanvas("yearChart");
+
+    if (!ctx) return;
+
+    destroyChart(yearChart);
+
+    const theme = getChartTheme();
+
+    const yearly = emptyArray(stats.yearly_trend);
+
+    const labels = yearly.map(item => item.year);
+
+    const values = yearly.map(item => item.count);
+
+    yearChart = new Chart(ctx, {
+
+        type: "line",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [
+
+                {
+
+                    label: "Records",
+
+                    data: values,
+
+                    fill: false,
+
+                    tension: 0.3,
+
+                    borderColor: "#0d6efd",
+
+                    backgroundColor: "#0d6efd",
+
+                    pointRadius: 4,
+
+                    pointHoverRadius: 6
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+
+                    display: true,
+
+                    labels: {
+
+                        color: theme.text
+
+                    }
+
+                }
+
+            },
+
+            scales: {
+
+                x: {
+
+                    ticks: {
+
+                        color: theme.text
+
+                    },
+
+                    grid: {
+
+                        color: theme.grid
+
+                    }
+
+                },
+
+                y: {
+
+                    beginAtZero: true,
+
+                    ticks: {
+
+                        precision: 0,
+
+                        color: theme.text
+
+                    },
+
+                    grid: {
+
+                        color: theme.grid
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    });
+
+}
+/*
+------------------------------------------------------
+PUBLIC FUNCTION
+------------------------------------------------------
+*/
+
+function renderAllCharts() {
+
+    renderStateChart();
+
+    renderCauseChart();
+
+    renderSexChart();
+
+    renderYearChart();
+
+}
+
+/*
+------------------------------------------------------
+Theme Change Listener
+------------------------------------------------------
+*/
+
+function watchThemeChange() {
+
+    const target = document.documentElement;
+
+    const observer = new MutationObserver(function (mutations) {
+
+        mutations.forEach(function (mutation) {
+
+            if (
+                mutation.type === "attributes" &&
+                mutation.attributeName === "data-theme"
+            ) {
+
+                renderAllCharts();
+
+            }
+
+        });
+
+    });
+
+    observer.observe(target, {
+
+        attributes: true,
+
+        attributeFilter: ["data-theme"]
+
+    });
+
+}
+
+/*
+------------------------------------------------------
+Initialize
+------------------------------------------------------
+*/
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    renderAllCharts();
+
+    watchThemeChange();
+
+});
+
+/*
+------------------------------------------------------
+Optional Global Access
+------------------------------------------------------
+*/
+
+window.renderDashboardCharts = renderAllCharts;
 
 })();
