@@ -211,3 +211,56 @@ footer {
     color: var(--text-color) !important;
 
 }
+/* ==========================================
+   Dark Mode Modal Support
+========================================== */
+
+.modal-content {
+
+    background: var(--bg-color);
+
+    color: var(--text-color);
+
+}
+
+.modal-header {
+
+    background: var(--bg-color);
+
+    color: var(--text-color);
+
+    border-bottom: 1px solid #444;
+
+}
+
+.modal-footer {
+
+    background: var(--bg-color);
+
+    border-top: 1px solid #444;
+
+}
+
+.modal-title {
+
+    color: var(--text-color);
+
+}
+
+.btn-close {
+
+    filter: var(--close-filter);
+
+}
+
+:root {
+
+    --close-filter: none;
+
+}
+
+html[data-theme="dark"] {
+
+    --close-filter: invert(1);
+
+}
