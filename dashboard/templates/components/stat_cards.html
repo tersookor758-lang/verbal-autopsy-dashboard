@@ -6,7 +6,7 @@
 
             <div class="card-body">
 
-                <h6 class="text-muted mb-2">
+                <h6 class="mb-2">
                     Total Records
                 </h6>
 
@@ -20,15 +20,13 @@
 
     </div>
 
-
-
     <div class="col-lg-3 col-md-6">
 
         <div class="card shadow-sm border-0 h-100">
 
             <div class="card-body">
 
-                <h6 class="text-muted mb-2">
+                <h6 class="mb-2">
                     Reporting States
                 </h6>
 
@@ -42,15 +40,13 @@
 
     </div>
 
-
-
     <div class="col-lg-3 col-md-6">
 
         <div class="card shadow-sm border-0 h-100">
 
             <div class="card-body">
 
-                <h6 class="text-muted mb-2">
+                <h6 class="mb-2">
                     Reporting Facilities
                 </h6>
 
@@ -64,19 +60,17 @@
 
     </div>
 
-
-
     <div class="col-lg-3 col-md-6">
 
         <div class="card shadow-sm border-0 h-100">
 
             <div class="card-body">
 
-                <h6 class="text-muted mb-2">
+                <h6 class="mb-2">
                     Latest Interview Year
                 </h6>
 
-                <h2 class="fw-bold text-dark">
+                <h2 class="fw-bold">
 
                     {% if statistics.latest_year %}
 
@@ -99,14 +93,13 @@
 </div>
 
 
-
 <div class="row g-4 mb-4">
 
     <div class="col-lg-6">
 
         <div class="card shadow-sm border-0 h-100">
 
-            <div class="card-header bg-white">
+            <div class="card-header">
 
                 <strong>
                     Sex Distribution
@@ -120,32 +113,24 @@
 
                     <div class="col-6">
 
-                        <h6 class="text-muted">
-
+                        <h6>
                             Male
-
                         </h6>
 
                         <h3 class="text-primary">
-
                             {{ statistics.male_count }}
-
                         </h3>
 
                     </div>
 
                     <div class="col-6">
 
-                        <h6 class="text-muted">
-
+                        <h6>
                             Female
-
                         </h6>
 
                         <h3 class="text-danger">
-
                             {{ statistics.female_count }}
-
                         </h3>
 
                     </div>
@@ -158,13 +143,11 @@
 
     </div>
 
-
-
     <div class="col-lg-6">
 
         <div class="card shadow-sm border-0 h-100">
 
-            <div class="card-header bg-white">
+            <div class="card-header">
 
                 <strong>
                     Reporting LGAs
@@ -174,7 +157,7 @@
 
             <div class="card-body d-flex align-items-center justify-content-center">
 
-                <h2 class="fw-bold text-secondary">
+                <h2 class="fw-bold">
 
                     {{ statistics.total_lgas }}
 
