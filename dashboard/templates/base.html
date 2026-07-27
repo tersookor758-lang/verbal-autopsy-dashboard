@@ -21,6 +21,15 @@
     </title>
 
 
+    <!-- Apply saved theme before page loads -->
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem("theme") || "light";
+            document.documentElement.setAttribute("data-theme", savedTheme);
+        })();
+    </script>
+
+
     <!-- Bootstrap CSS -->
 
     <link
@@ -89,6 +98,15 @@
 
         </a>
 
+        <!-- Dark Mode Toggle -->
+        <button
+            id="themeToggle"
+            class="btn btn-outline-secondary"
+            type="button"
+        >
+            <i class="bi bi-moon-fill"></i>
+        </button>
+
     </div>
 
 </nav>
@@ -129,7 +147,6 @@
 
 
 <!-- Page-specific variables -->
-<!-- Must load before charts.js -->
 
 {% block scripts %}
 {% endblock %}
@@ -149,6 +166,49 @@
 <script
     src="{{ url_for('static', filename='js/upload.js') }}"
 ></script>
+
+
+<!-- Dark Mode Script -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const toggleButton = document.getElementById("themeToggle");
+    const icon = toggleButton.querySelector("i");
+
+    function updateIcon(theme) {
+        if (theme === "dark") {
+            icon.className = "bi bi-sun-fill";
+        } else {
+            icon.className = "bi bi-moon-fill";
+        }
+    }
+
+    let currentTheme =
+        document.documentElement.getAttribute("data-theme") || "light";
+
+    updateIcon(currentTheme);
+
+    toggleButton.addEventListener("click", function () {
+
+        currentTheme =
+            currentTheme === "light" ? "dark" : "light";
+
+        document.documentElement.setAttribute(
+            "data-theme",
+            currentTheme
+        );
+
+        localStorage.setItem("theme", currentTheme);
+
+        updateIcon(currentTheme);
+
+    });
+
+});
+
+</script>
 
 
 </body>
