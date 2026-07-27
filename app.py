@@ -4,13 +4,38 @@ from config import Config
 from extensions import db, login_manager
 
 # Import models so SQLAlchemy knows about them
-# before db.create_all() is executed.
 from models import User, VerbalAutopsy
 
 # Blueprints
 from dashboard import dashboard_bp
 from api import api_bp
 from auth import auth_bp
+
+
+def create_default_admin():
+    """
+    Creates the default administrator account
+    if there are no users in the database.
+    """
+
+    if User.query.count() == 0:
+
+        admin = User(
+            username="admin",
+            email="admin@example.com",
+            role="Administrator"
+        )
+
+        admin.set_password("admin123")
+
+        db.session.add(admin)
+        db.session.commit()
+
+        print("=" * 60)
+        print("DEFAULT ADMIN ACCOUNT CREATED")
+        print("Username : admin")
+        print("Password : admin123")
+        print("=" * 60)
 
 
 def create_app():
@@ -48,17 +73,10 @@ def create_app():
     # Register Blueprints
     # ------------------------------------------
 
-    # Dashboard
-    app.register_blueprint(
-        dashboard_bp
-    )
+    app.register_blueprint(dashboard_bp)
 
-    # Authentication
-    app.register_blueprint(
-        auth_bp
-    )
+    app.register_blueprint(auth_bp)
 
-    # REST API
     app.register_blueprint(
         api_bp,
         url_prefix="/api"
@@ -71,6 +89,8 @@ def create_app():
     with app.app_context():
 
         db.create_all()
+
+        create_default_admin()
 
     return app
 
