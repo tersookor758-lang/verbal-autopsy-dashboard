@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 
 from flask import render_template, request
+from flask_login import login_required
 
 from dashboard import dashboard_bp
 from models import VerbalAutopsy
@@ -32,6 +33,7 @@ def load_lgas():
 
 
 @dashboard_bp.route("/")
+@login_required
 def index():
 
     query = VerbalAutopsy.query
