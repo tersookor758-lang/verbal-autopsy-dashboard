@@ -8,7 +8,6 @@ Verbal Autopsy Dashboard
 {% endblock %}
 
 
-
 {% block content %}
 
 <div class="container-fluid py-4">
@@ -23,60 +22,28 @@ Verbal Autopsy Dashboard
 
         <p class="text-muted mb-0">
 
-            Monitor, search, analyze and export Verbal Autopsy records across Nigeria.
+            Monitor Verbal Autopsy records across Nigeria through interactive statistics and visual analytics.
 
         </p>
 
     </div>
 
-
-
     {% include "components/stat_cards.html" %}
-
-
-
-    {% include "components/export_buttons.html" %}
-
-
 
     {% include "components/upload_modal.html" %}
 
-
-
-    {% include "components/filters.html" %}
-
-
-
     {% include "components/charts.html" %}
-
-
-
-    {% include "components/records_table.html" %}
-
-
-
-    {% include "components/pagination.html" %}
 
 </div>
 
 {% endblock %}
 
 
-
 {% block scripts %}
 
 <script>
 
-    /*
-     * State → LGA mapping
-     */
-    window.allLgas = {{ all_lgas | tojson }};
-
-
-    /*
-     * Dashboard statistics for Chart.js
-     */
-    window.dashboardStatistics = {{ statistics | tojson }};
+window.dashboardStatistics = {{ statistics | tojson }};
 
 </script>
 
