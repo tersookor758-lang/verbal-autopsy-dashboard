@@ -32,9 +32,7 @@ def load_lgas():
         return json.load(file)
 
 
-@dashboard_bp.route("/")
-@login_required
-def index():
+def get_dashboard_data():
 
     query = VerbalAutopsy.query
 
@@ -190,26 +188,72 @@ def index():
 
     statistics = get_dashboard_statistics()
 
+    return {
+
+        "records": records,
+
+        "pagination": pagination,
+
+        "states": states,
+
+        "lgas": lgas,
+
+        "all_lgas": all_lgas,
+
+        "facilities": facilities,
+
+        "causes": causes,
+
+        "years": years,
+
+        "statistics": statistics
+
+    }
+
+
+@dashboard_bp.route("/")
+@login_required
+def index():
+
+    data = get_dashboard_data()
+
     return render_template(
-
         "index.html",
+        **data
+    )
 
-        records=records,
 
-        pagination=pagination,
+@dashboard_bp.route("/records")
+@login_required
+def records():
 
-        states=states,
+    data = get_dashboard_data()
 
-        lgas=lgas,
+    return render_template(
+        "records.html",
+        **data
+    )
 
-        all_lgas=all_lgas,
 
-        facilities=facilities,
+@dashboard_bp.route("/analytics")
+@login_required
+def analytics():
 
-        causes=causes,
+    data = get_dashboard_data()
 
-        years=years,
+    return render_template(
+        "analytics.html",
+        statistics=data["statistics"]
+    )
 
-        statistics=statistics
 
+@dashboard_bp.route("/reports")
+@login_required
+def reports():
+
+    data = get_dashboard_data()
+
+    return render_template(
+        "reports.html",
+        statistics=data["statistics"]
     )
