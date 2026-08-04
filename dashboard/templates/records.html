@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+Records
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <div class="mb-4">
+
+        <h2 class="fw-bold">
+
+            Verbal Autopsy Records
+
+        </h2>
+
+        <p class="text-muted mb-0">
+
+            Search, filter and browse all uploaded Verbal Autopsy records.
+
+        </p>
+
+    </div>
+
+    {% include "components/filters.html" %}
+
+    {% include "components/records_table.html" %}
+
+    {% include "components/pagination.html" %}
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+
+window.allLgas = {{ all_lgas | tojson }};
+
+</script>
+
+{% endblock %}
