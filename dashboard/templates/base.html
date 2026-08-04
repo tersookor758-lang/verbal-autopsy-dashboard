@@ -53,30 +53,100 @@
 
 <body>
 
-<nav class="navbar navbar-expand-lg bg-primary">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
 
     <div class="container-fluid">
 
         <a
-            class="navbar-brand text-white"
+            class="navbar-brand"
             href="{{ url_for('dashboard.index') }}"
         >
 
             <i class="bi bi-bar-chart-fill"></i>
 
-            Verbal Autopsy Outcome Dashboard
+            VA Dashboard
 
         </a>
 
         <button
-            id="themeToggle"
-            class="btn btn-light"
+            class="navbar-toggler"
             type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
         >
 
-            <i id="themeIcon" class="bi bi-moon-fill"></i>
+            <span class="navbar-toggler-icon"></span>
 
         </button>
+
+        <div
+            class="collapse navbar-collapse"
+            id="navbarNav"
+        >
+
+            <ul class="navbar-nav ms-4">
+
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link"
+                        href="{{ url_for('dashboard.index') }}"
+                    >
+                        Dashboard
+                    </a>
+
+                </li>
+
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link"
+                        href="{{ url_for('dashboard.records') }}"
+                    >
+                        Records
+                    </a>
+
+                </li>
+
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link"
+                        href="{{ url_for('dashboard.analytics') }}"
+                    >
+                        Analytics
+                    </a>
+
+                </li>
+
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link"
+                        href="{{ url_for('dashboard.reports') }}"
+                    >
+                        Reports
+                    </a>
+
+                </li>
+
+            </ul>
+
+            <div class="ms-auto">
+
+                <button
+                    id="themeToggle"
+                    class="btn btn-light"
+                    type="button"
+                >
+
+                    <i id="themeIcon" class="bi bi-moon-fill"></i>
+
+                </button>
+
+            </div>
+
+        </div>
 
     </div>
 
@@ -98,21 +168,17 @@
 </footer>
 
 
-<!-- Bootstrap -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 {% block scripts %}
 {% endblock %}
 
-<!-- Project Scripts -->
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
 
-<!-- Dark Mode -->
 <script>
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -126,15 +192,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         localStorage.setItem("theme", theme);
 
-        if (theme === "dark") {
-
-            icon.className = "bi bi-sun-fill";
-
-        } else {
-
-            icon.className = "bi bi-moon-fill";
-
-        }
+        icon.className = theme === "dark"
+            ? "bi bi-sun-fill"
+            : "bi bi-moon-fill";
 
     }
 
