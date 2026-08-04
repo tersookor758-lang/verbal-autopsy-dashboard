@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+Analytics
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <div class="mb-4">
+
+        <h2 class="fw-bold">
+
+            Dashboard Analytics
+
+        </h2>
+
+        <p class="text-muted mb-0">
+
+            Visual analysis of Verbal Autopsy data across Nigeria.
+
+        </p>
+
+    </div>
+
+    {% include "components/charts.html" %}
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+
+window.dashboardStatistics = {{ statistics | tojson }};
+
+</script>
+
+{% endblock %}
