@@ -1,5 +1,5 @@
+```html
 {% extends "base.html" %}
-
 
 {% block title %}
 
@@ -7,32 +7,39 @@ Verbal Autopsy Dashboard
 
 {% endblock %}
 
-
 {% block content %}
 
-<div class="container-fluid py-4">
+<div class="mb-4">
 
-    <div class="mb-4">
+    <h2 class="fw-bold">
+        Verbal Autopsy Outcome Dashboard
+    </h2>
 
-        <h2 class="fw-bold">
+    <p class="text-muted mb-0">
+        Monitor Verbal Autopsy records across Nigeria through a
+        high-level overview of the available data.
+    </p>
 
-            Verbal Autopsy Outcome Dashboard
+</div>
 
-        </h2>
+
+{% include "components/stat_cards.html" %}
+
+
+<div class="card shadow-sm border-0 mt-4">
+
+    <div class="card-body">
+
+        <h5 class="fw-bold mb-2">
+            Dashboard Overview
+        </h5>
 
         <p class="text-muted mb-0">
-
-            Monitor Verbal Autopsy records across Nigeria through interactive statistics and visual analytics.
-
+            Use the navigation above to explore detailed records,
+            analytics, and report management tools.
         </p>
 
     </div>
-
-    {% include "components/stat_cards.html" %}
-
-    {% include "components/upload_modal.html" %}
-
-    {% include "components/charts.html" %}
 
 </div>
 
@@ -41,10 +48,5 @@ Verbal Autopsy Dashboard
 
 {% block scripts %}
 
-<script>
-
-window.dashboardStatistics = {{ statistics | tojson }};
-
-</script>
-
 {% endblock %}
+```
