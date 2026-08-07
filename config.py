@@ -37,12 +37,18 @@ class Config:
             1
         )
 
+    # SQLALCHEMY_DATABASE_URI = (
+
+    #     DATABASE_URL
+
+    #     or f"sqlite:///{os.path.join(BASE_DIR, 'verbal_autopsy.db')}"
+
+    # )
+
+
     SQLALCHEMY_DATABASE_URI = (
-
         DATABASE_URL
-
-        or f"sqlite:///{os.path.join(BASE_DIR, 'verbal_autopsy.db')}"
-
+        or "mysql+pymysql://tersoo:tersoo2007@localhost:3306/verbal_autopsy"
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
