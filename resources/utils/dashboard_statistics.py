@@ -1,20 +1,9 @@
-```python
 from sqlalchemy import func
 
 from models import VerbalAutopsy
 
 
 def get_dashboard_statistics():
-    """
-    Generate summary statistics for the Verbal Autopsy dashboard.
-
-    Returns:
-        dict: Dashboard and analytics statistics.
-    """
-
-    # --------------------------------------------------
-    # BASIC SUMMARY STATISTICS
-    # --------------------------------------------------
 
     total_records = VerbalAutopsy.query.count()
 
@@ -30,11 +19,6 @@ def get_dashboard_statistics():
         VerbalAutopsy.facility_name
     )
 
-
-    # --------------------------------------------------
-    # SEX DISTRIBUTION
-    # --------------------------------------------------
-
     male_count = VerbalAutopsy.query.filter(
         func.lower(VerbalAutopsy.sex) == "male"
     ).count()
@@ -43,21 +27,11 @@ def get_dashboard_statistics():
         func.lower(VerbalAutopsy.sex) == "female"
     ).count()
 
-
-    # --------------------------------------------------
-    # LATEST INTERVIEW YEAR
-    # --------------------------------------------------
-
     latest_year = VerbalAutopsy.query.with_entities(
         func.max(
             VerbalAutopsy.interview_year
         )
     ).scalar()
-
-
-    # --------------------------------------------------
-    # RECORDS BY STATE
-    # --------------------------------------------------
 
     top_states = (
         VerbalAutopsy.query.with_entities(
@@ -77,11 +51,6 @@ def get_dashboard_statistics():
         .all()
     )
 
-
-    # --------------------------------------------------
-    # CAUSE OF DEATH DISTRIBUTION
-    # --------------------------------------------------
-
     top_causes = (
         VerbalAutopsy.query.with_entities(
             VerbalAutopsy.cause_of_death,
@@ -100,11 +69,6 @@ def get_dashboard_statistics():
         .all()
     )
 
-
-    # --------------------------------------------------
-    # YEARLY TREND
-    # --------------------------------------------------
-
     yearly_trend = (
         VerbalAutopsy.query.with_entities(
             VerbalAutopsy.interview_year,
@@ -122,25 +86,13 @@ def get_dashboard_statistics():
         .all()
     )
 
-
-    # --------------------------------------------------
-    # RETURN STATISTICS
-    # --------------------------------------------------
-
     return {
-
         "total_records": total_records,
-
         "total_states": total_states,
-
         "total_lgas": total_lgas,
-
         "total_facilities": total_facilities,
-
         "male_count": male_count,
-
         "female_count": female_count,
-
         "latest_year": latest_year,
 
         "top_states": [
@@ -166,14 +118,10 @@ def get_dashboard_statistics():
             }
             for year, count in yearly_trend
         ]
-
     }
 
 
 def db_count_distinct(column):
-    """
-    Count distinct non-null values for a database column.
-    """
 
     return (
         VerbalAutopsy.query
@@ -184,4 +132,3 @@ def db_count_distinct(column):
         .distinct()
         .count()
     )
-```
