@@ -49,6 +49,8 @@ class User(UserMixin, db.Model):
         default=datetime.utcnow
     )
 
+import secrets
+from datetime import datetime, timedelta
     # -----------------------------
     # Password Methods
     # -----------------------------
