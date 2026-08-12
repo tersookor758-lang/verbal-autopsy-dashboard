@@ -14,6 +14,7 @@ from extensions import db
 # ==========================================================
 
 class User(UserMixin, db.Model):
+
     __tablename__ = "users"
 
     id = db.Column(
@@ -49,14 +50,14 @@ class User(UserMixin, db.Model):
         default=datetime.utcnow
     )
 
-import secrets
-from datetime import datetime, timedelta
     # -----------------------------
     # Password Methods
     # -----------------------------
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = generate_password_hash(
+            password
+        )
 
     def check_password(self, password):
         return check_password_hash(
@@ -73,10 +74,57 @@ from datetime import datetime, timedelta
 
 
 # ==========================================================
+# Refresh Token Model
+# ==========================================================
+
+class RefreshToken(db.Model):
+
+    __tablename__ = "refresh_tokens"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False
+    )
+
+    token_hash = db.Column(
+        db.String(255),
+        unique=True,
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
+
+    expires_at = db.Column(
+        db.DateTime,
+        nullable=False
+    )
+
+    revoked = db.Column(
+        db.Boolean,
+        default=False
+    )
+
+    user = db.relationship(
+        "User",
+        backref="refresh_tokens"
+    )
+
+
+# ==========================================================
 # Verbal Autopsy Model
 # ==========================================================
 
 class VerbalAutopsy(db.Model):
+
     __tablename__ = "verbal_autopsy"
 
     id = db.Column(
