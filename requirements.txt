@@ -62,3 +62,4 @@ tzdata==2026.3
 urllib3==2.7.0
 Werkzeug==3.0.3
 WTForms==3.2.2
+Flask-JWT-Extended
