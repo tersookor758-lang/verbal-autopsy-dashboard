@@ -38,9 +38,14 @@ def validate_security_config(app):
 
 def create_default_admin():
     """
-    Creates the default administrator account
-    if there are no users in the database.
+    Creates the default administrator account if there are no users in the database.
+    
+    This is disabled in production for security.
     """
+
+    # Disable default admin creation in production
+    if Config.IS_PRODUCTION:
+        return
 
     if User.query.count() == 0:
 
