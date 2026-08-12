@@ -1,4 +1,9 @@
-from flask import Flask
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from flask import Flask, jsonify
+from flask_cors import CORS
 
 from config import Config
 from extensions import db, login_manager, jwt
@@ -10,6 +15,25 @@ from models import User, VerbalAutopsy
 from dashboard import dashboard_bp
 from api import api_bp
 from auth import auth_bp
+
+
+
+def validate_security_config(app):
+    """
+    Fail fast when required security configuration is missing.
+    """
+
+    if not app.config.get("SECRET_KEY"):
+
+        raise RuntimeError(
+            "SECRET_KEY must be set when running in production."
+        )
+
+    if not app.config.get("JWT_SECRET_KEY"):
+
+        raise RuntimeError(
+            "JWT_SECRET_KEY environment variable must be set."
+        )
 
 
 def create_default_admin():
@@ -51,6 +75,8 @@ def create_app():
     app = Flask(__name__)
 
     app.config.from_object(Config)
+
+    validate_security_config(app)
 
     # ------------------------------------------
     # Initialize Extensions
