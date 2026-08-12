@@ -12,6 +12,7 @@ from api.models import (
 )
 
 from api.parsers import upload_parser
+from api.rbac import role_required
 
 from extensions import db
 from models import VerbalAutopsy
@@ -72,6 +73,7 @@ api.add_namespace(
 @verbal_autopsy_ns.route("/locations")
 class Locations(Resource):
 
+    @role_required("Administrator", "Editor", "Viewer")
     @verbal_autopsy_ns.doc(
         description="""
         Retrieve Nigerian geographical information.
@@ -82,6 +84,16 @@ class Locations(Resource):
         With a state parameter:
         - Returns all LGAs belonging to that state.
         """
+    )
+    @verbal_autopsy_ns.response(
+        401,
+        "Authentication required",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        403,
+        "Forbidden",
+        error_model
     )
     def get(self):
 
@@ -121,8 +133,19 @@ class Locations(Resource):
 @verbal_autopsy_ns.route("/")
 class VerbalAutopsyList(Resource):
 
+    @role_required("Administrator", "Editor", "Viewer")
     @verbal_autopsy_ns.doc(
         description="Retrieve all Verbal Autopsy records"
+    )
+    @verbal_autopsy_ns.response(
+        401,
+        "Authentication required",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        403,
+        "Forbidden",
+        error_model
     )
     @verbal_autopsy_ns.marshal_list_with(
         verbal_autopsy_model
@@ -151,6 +174,7 @@ class VerbalAutopsyList(Resource):
 class VerbalAutopsyDetail(Resource):
 
 
+    @role_required("Administrator", "Editor", "Viewer")
     @verbal_autopsy_ns.doc(
         description="Retrieve a record using patient ID"
     )
@@ -160,6 +184,16 @@ class VerbalAutopsyDetail(Resource):
     @verbal_autopsy_ns.response(
         404,
         "Record not found",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        401,
+        "Authentication required",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        403,
+        "Forbidden",
         error_model
     )
     def get(
@@ -186,6 +220,7 @@ class VerbalAutopsyDetail(Resource):
 
 
 
+    @role_required("Administrator", "Editor")
     @verbal_autopsy_ns.expect(
         verbal_autopsy_model
     )
@@ -195,6 +230,16 @@ class VerbalAutopsyDetail(Resource):
     @verbal_autopsy_ns.response(
         404,
         "Record not found",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        401,
+        "Authentication required",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        403,
+        "Forbidden",
         error_model
     )
     @verbal_autopsy_ns.doc(
@@ -220,34 +265,57 @@ class VerbalAutopsyDetail(Resource):
             }, 404
 
 
-        data = request.json
+        # Whitelist of allowed fields to prevent mass-assignment
+        allowed_fields = {
+            "state_name",
+            "lga_name",
+            "facility_name",
+            "age",
+            "sex",
+            "cause_of_death",
+            "cause_list",
+            "icd10",
+            "interviewer_name",
+            "interview_year",
+            "interview_month",
+            "interview_day",
+            "interview_time"
+        }
 
+        data = request.json or {}
 
-        for key, value in data.items():
+        try:
+            for key, value in data.items():
+                if key in allowed_fields:
+                    setattr(record, key, value)
 
-            if hasattr(
-                record,
-                key
-            ):
-
-                setattr(
-                    record,
-                    key,
-                    value
-                )
-
-
-        db.session.commit()
-
+            db.session.commit()
+        except Exception as error:
+            db.session.rollback()
+            current_app.logger.exception(error)
+            return {
+                "message": "Failed to update record"
+            }, 500
 
         return record.to_dict(), 200
 
 
 
 
+    @role_required("Administrator")
     @verbal_autopsy_ns.response(
         404,
         "Record not found",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        401,
+        "Authentication required",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        403,
+        "Forbidden",
         error_model
     )
     @verbal_autopsy_ns.doc(
@@ -298,6 +366,7 @@ class VerbalAutopsyDetail(Resource):
 class UploadRecords(Resource):
 
 
+    @role_required("Administrator", "Editor")
     @verbal_autopsy_ns.expect(
         upload_parser
     )
@@ -314,6 +383,16 @@ class UploadRecords(Resource):
     @verbal_autopsy_ns.response(
         500,
         "Upload failed",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        401,
+        "Authentication required",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        403,
+        "Forbidden",
         error_model
     )
     @verbal_autopsy_ns.doc(
@@ -380,6 +459,7 @@ class UploadRecords(Resource):
                 uploaded_file
             )
 
+            db.session.commit()
 
             return {
 
@@ -393,7 +473,7 @@ class UploadRecords(Resource):
 
 
         except ValueError as error:
-
+            db.session.rollback()
 
             return {
 
@@ -404,7 +484,7 @@ class UploadRecords(Resource):
 
 
         except Exception as error:
-
+            db.session.rollback()
 
             current_app.logger.exception(
                 error
@@ -429,6 +509,7 @@ class UploadRecords(Resource):
 class ExportRecords(Resource):
 
 
+    @role_required("Administrator", "Editor", "Viewer")
     @verbal_autopsy_ns.doc(
         description="""
         Export all Verbal Autopsy records.
@@ -442,6 +523,16 @@ class ExportRecords(Resource):
     @verbal_autopsy_ns.response(
         400,
         "Invalid export format",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        401,
+        "Authentication required",
+        error_model
+    )
+    @verbal_autopsy_ns.response(
+        403,
+        "Forbidden",
         error_model
     )
     def get(
