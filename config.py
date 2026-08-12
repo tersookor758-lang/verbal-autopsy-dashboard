@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 
 BASE_DIR = os.path.abspath(
@@ -16,26 +17,37 @@ class Config:
     # Flask
     # -----------------------------
 
-    SECRET_KEY = os.environ.get(
-        "SECRET_KEY",
-        os.urandom(24)
-    )
+    ENVIRONMENT = os.environ.get(
+        "FLASK_ENV",
+        os.environ.get("APP_ENV", "development")
+    ).lower()
+
+    IS_PRODUCTION = ENVIRONMENT == "production"
+
+    SECRET_KEY = os.environ.get("SECRET_KEY")
+
+    if not SECRET_KEY and not IS_PRODUCTION:
+
+        SECRET_KEY = "dev-only-session-secret-change-me"
 
 
     # -----------------------------
     # JWT Authentication
     # -----------------------------
 
-    JWT_SECRET_KEY = os.environ.get(
-        "JWT_SECRET_KEY",
-        "change-this-jwt-secret-in-production"
-    )
+    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
+
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 
     JWT_TOKEN_LOCATION = ["headers"]
 
     JWT_HEADER_NAME = "Authorization"
 
     JWT_HEADER_TYPE = "Bearer"
+
+    JWT_ALGORITHM = "HS256"
 
 
     # -----------------------------
