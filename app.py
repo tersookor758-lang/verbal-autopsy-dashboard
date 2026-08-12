@@ -68,6 +68,7 @@ def create_app():
 
     import dashboard.routes
     import api.api
+    import api.auth
     import api.routes
     import auth.routes
 
