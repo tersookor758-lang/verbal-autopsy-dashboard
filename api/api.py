@@ -2,7 +2,6 @@ from flask_restx import Api
 
 from api import api_bp
 
-
 api = Api(
     api_bp,
 
@@ -24,7 +23,7 @@ This API provides endpoints for:
 • Dashboard statistics
 • State and LGA lookup
 
-Built with Flask, Flask-RESTX and SQLite.
+Built with Flask, Flask-RESTX and MySQL.
 """,
 
     doc="/swagger",
