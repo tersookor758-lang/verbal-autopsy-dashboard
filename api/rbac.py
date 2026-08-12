@@ -1,6 +1,6 @@
 from functools import wraps
 
-from flask import g, current_app
+from flask import g, current_app, request
 from flask_jwt_extended.exceptions import (
     JWTExtendedException,
     NoAuthorizationError,
@@ -10,6 +10,7 @@ from jwt import ExpiredSignatureError, PyJWTError
 
 from extensions import db
 from models import User
+from api.auth_security import log_unauthorized_access, log_forbidden_access
 
 
 def authorization_response(message, status_code):
@@ -65,9 +66,13 @@ def role_required(*allowed_roles):
     def decorator(function):
         @wraps(function)
         def wrapper(*args, **kwargs):
+            ip_address = request.remote_addr
+            endpoint = request.endpoint or "unknown"
+            
             try:
                 verify_jwt_in_request()
             except NoAuthorizationError:
+                log_unauthorized_access(endpoint, "anonymous", ip_address)
                 return authorization_response(
                     "Authorization header with a Bearer token is required.",
                     401,
@@ -86,11 +91,20 @@ def role_required(*allowed_roles):
             user = get_authenticated_user()
 
             if user is None:
+                log_unauthorized_access(endpoint, "unknown", ip_address)
                 return authorization_response("Authentication is required.", 401)
 
             g.current_user = user
 
             if user.role not in allowed_role_set:
+                log_forbidden_access(
+                    endpoint,
+                    user.username,
+                    user.id,
+                    ",".join(allowed_role_set),
+                    user.role,
+                    ip_address
+                )
                 current_app.logger.warning(
                     f"Permission denied: user {user.id} ({user.role}) "
                     f"attempted to access resource requiring {allowed_role_set}"
