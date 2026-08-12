@@ -4,7 +4,7 @@ import secrets
 
 from flask import request
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
-from flask_restx import Namespace, Resource
+from flask_restx import Namespace, Resource, fields
 
 from api.api import api
 from extensions import db
@@ -14,6 +14,40 @@ from models import RefreshToken, User
 auth_ns = Namespace(
     "auth",
     description="Authentication and authorization operations",
+)
+
+login_request_model = api.model(
+    "LoginRequest",
+    {
+        "username": fields.String(
+            required=True,
+            description="Username for the account.",
+        ),
+        "password": fields.String(
+            required=True,
+            description="Password for the account.",
+        ),
+    },
+)
+
+refresh_request_model = api.model(
+    "RefreshRequest",
+    {
+        "refresh_token": fields.String(
+            required=True,
+            description="Refresh token issued during login or token refresh.",
+        ),
+    },
+)
+
+logout_request_model = api.model(
+    "LogoutRequest",
+    {
+        "refresh_token": fields.String(
+            required=True,
+            description="Refresh token to revoke.",
+        ),
+    },
 )
 
 ACCESS_TOKEN_LIFETIME = timedelta(minutes=15)
@@ -89,6 +123,7 @@ def get_refresh_token(raw_token):
 
 @auth_ns.route("/login")
 class Login(Resource):
+    @auth_ns.expect(login_request_model, validate=False)
     def post(self):
         data = request.get_json(silent=True) or {}
         username = data.get("username", "").strip()
@@ -110,6 +145,7 @@ class Login(Resource):
 
 @auth_ns.route("/refresh")
 class Refresh(Resource):
+    @auth_ns.expect(refresh_request_model, validate=False)
     def post(self):
         data = request.get_json(silent=True) or {}
         raw_token = data.get("refresh_token", "").strip()
@@ -147,6 +183,7 @@ class Refresh(Resource):
 
 @auth_ns.route("/logout")
 class Logout(Resource):
+    @auth_ns.expect(logout_request_model, validate=False)
     def post(self):
         data = request.get_json(silent=True) or {}
         raw_token = data.get("refresh_token", "").strip()
