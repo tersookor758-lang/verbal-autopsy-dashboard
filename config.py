@@ -78,7 +78,18 @@ class Config:
 
 
     # -----------------------------
-    # JSON
+    # Session Cookies (Security)
+    # -----------------------------
+
+    SESSION_COOKIE_SECURE = IS_PRODUCTION
+
+    SESSION_COOKIE_HTTPONLY = True
+
+    SESSION_COOKIE_SAMESITE = "Lax"
+
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
+
+
     # -----------------------------
 
     JSON_SORT_KEYS = False
