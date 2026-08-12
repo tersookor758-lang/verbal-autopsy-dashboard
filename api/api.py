@@ -2,6 +2,17 @@ from flask_restx import Api
 
 from api import api_bp
 
+
+authorizations = {
+    "BearerAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "JWT authorization header. Enter: Bearer <access_token>",
+    }
+}
+
+
 api = Api(
     api_bp,
 
@@ -27,6 +38,10 @@ Built with Flask, Flask-RESTX and MySQL.
 """,
 
     doc="/swagger",
+
+    authorizations=authorizations,
+
+    security="BearerAuth",
 
     ordered=True,
 
