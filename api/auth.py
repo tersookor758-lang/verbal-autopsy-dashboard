@@ -50,6 +50,100 @@ logout_request_model = api.model(
     },
 )
 
+auth_user_model = api.model(
+    "AuthUser",
+    {
+        "id": fields.Integer(
+            required=True,
+            description="User ID.",
+        ),
+        "username": fields.String(
+            required=True,
+            description="Username for the account.",
+        ),
+        "email": fields.String(
+            required=True,
+            description="User email address.",
+        ),
+        "role": fields.String(
+            required=True,
+            description="User role.",
+        ),
+    },
+)
+
+login_response_model = api.model(
+    "LoginResponse",
+    {
+        "message": fields.String(
+            required=True,
+            description="Login status message.",
+            example="Login successful.",
+        ),
+        "access_token": fields.String(
+            required=True,
+            description="JWT access token for Bearer authentication.",
+        ),
+        "refresh_token": fields.String(
+            required=True,
+            description="Opaque refresh token used to request a new access token.",
+        ),
+        "token_type": fields.String(
+            required=True,
+            description="Token type used in the Authorization header.",
+            example="Bearer",
+        ),
+        "expires_in": fields.Integer(
+            required=True,
+            description="Access token lifetime in seconds.",
+            example=900,
+        ),
+        "user": fields.Nested(
+            auth_user_model,
+            required=True,
+            description="Authenticated user details.",
+        ),
+    },
+)
+
+token_response_model = api.model(
+    "TokenResponse",
+    {
+        "message": fields.String(
+            required=True,
+            description="Token status message.",
+        ),
+        "access_token": fields.String(
+            required=True,
+            description="JWT access token for Bearer authentication.",
+        ),
+        "refresh_token": fields.String(
+            required=True,
+            description="Opaque refresh token used to request a new access token.",
+        ),
+        "token_type": fields.String(
+            required=True,
+            description="Token type used in the Authorization header.",
+            example="Bearer",
+        ),
+        "expires_in": fields.Integer(
+            required=True,
+            description="Access token lifetime in seconds.",
+            example=900,
+        ),
+    },
+)
+
+message_response_model = api.model(
+    "AuthMessageResponse",
+    {
+        "message": fields.String(
+            required=True,
+            description="Response status message.",
+        ),
+    },
+)
+
 ACCESS_TOKEN_LIFETIME = timedelta(minutes=15)
 REFRESH_TOKEN_LIFETIME = timedelta(days=30)
 
@@ -124,6 +218,9 @@ def get_refresh_token(raw_token):
 @auth_ns.route("/login")
 class Login(Resource):
     @auth_ns.expect(login_request_model, validate=False)
+    @auth_ns.response(200, "Login successful.", login_response_model)
+    @auth_ns.response(400, "Username and password are required.", message_response_model)
+    @auth_ns.response(401, "Invalid username or password.", message_response_model)
     def post(self):
         data = request.get_json(silent=True) or {}
         username = data.get("username", "").strip()
@@ -146,6 +243,9 @@ class Login(Resource):
 @auth_ns.route("/refresh")
 class Refresh(Resource):
     @auth_ns.expect(refresh_request_model, validate=False)
+    @auth_ns.response(200, "Token refreshed successfully.", token_response_model)
+    @auth_ns.response(400, "Refresh token is required.", message_response_model)
+    @auth_ns.response(401, "Refresh token is invalid, revoked, expired, or orphaned.", message_response_model)
     def post(self):
         data = request.get_json(silent=True) or {}
         raw_token = data.get("refresh_token", "").strip()
@@ -184,6 +284,9 @@ class Refresh(Resource):
 @auth_ns.route("/logout")
 class Logout(Resource):
     @auth_ns.expect(logout_request_model, validate=False)
+    @auth_ns.response(200, "Logout successful.", message_response_model)
+    @auth_ns.response(400, "Refresh token is required.", message_response_model)
+    @auth_ns.response(401, "Invalid refresh token.", message_response_model)
     def post(self):
         data = request.get_json(silent=True) or {}
         raw_token = data.get("refresh_token", "").strip()
@@ -204,6 +307,9 @@ class Logout(Resource):
 
 @auth_ns.route("/me")
 class CurrentUser(Resource):
+    @auth_ns.response(200, "Current authenticated user.", auth_user_model)
+    @auth_ns.response(401, "Missing or invalid Authorization header.", message_response_model)
+    @auth_ns.response(404, "User not found.", message_response_model)
     @jwt_required()
     def get(self):
         user = User.query.get(int(get_jwt_identity()))
