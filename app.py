@@ -1,7 +1,7 @@
 from flask import Flask
 
 from config import Config
-from extensions import db, login_manager
+from extensions import db, login_manager, jwt
 
 # Import models so SQLAlchemy knows about them
 from models import User, VerbalAutopsy
@@ -59,6 +59,8 @@ def create_app():
     db.init_app(app)
 
     login_manager.init_app(app)
+
+    jwt.init_app(app)
 
     # ------------------------------------------
     # Import Routes
