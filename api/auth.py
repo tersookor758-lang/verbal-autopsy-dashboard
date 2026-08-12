@@ -3,10 +3,11 @@ import hashlib
 import secrets
 
 from flask import request
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+from flask_jwt_extended import create_access_token
 from flask_restx import Namespace, Resource, fields
 
 from api.api import api
+from api.rbac import get_authenticated_user, role_required
 from extensions import db
 from models import RefreshToken, User
 
@@ -307,12 +308,13 @@ class Logout(Resource):
 
 @auth_ns.route("/me")
 class CurrentUser(Resource):
+    @role_required("Administrator", "Editor", "Viewer")
     @auth_ns.response(200, "Current authenticated user.", auth_user_model)
     @auth_ns.response(401, "Missing or invalid Authorization header.", message_response_model)
+    @auth_ns.response(403, "Forbidden.", message_response_model)
     @auth_ns.response(404, "User not found.", message_response_model)
-    @jwt_required()
     def get(self):
-        user = User.query.get(int(get_jwt_identity()))
+        user = get_authenticated_user()
 
         if not user:
             return error_response("User not found.", 404)
