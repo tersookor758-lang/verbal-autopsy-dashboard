@@ -41,7 +41,7 @@ Built with Flask, Flask-RESTX and MySQL.
 
     authorizations=authorizations,
 
-    security="BearerAuth",
+    security=[{"BearerAuth": []}],
 
     ordered=True,
 
