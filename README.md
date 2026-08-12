@@ -128,7 +128,7 @@ http://127.0.0.1:5000
 Swagger UI is available at:
 
 ```text
-http://127.0.0.1:5000/api/
+http://127.0.0.1:5001/api/
 ```
 
 ---
