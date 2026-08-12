@@ -5,10 +5,13 @@ Extensions are created here and initialized in app.py
 to avoid circular imports.
 """
 
+import logging
 from flask import jsonify
 from flask_jwt_extended import JWTManager
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 
 # ==========================================================
@@ -16,6 +19,33 @@ from flask_sqlalchemy import SQLAlchemy
 # ==========================================================
 
 db = SQLAlchemy()
+
+
+# ==========================================================
+# Flask-Limiter (Rate Limiting)
+# ==========================================================
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[]
+)
+
+
+# ==========================================================
+# Security Logger
+# ==========================================================
+
+security_logger = logging.getLogger("security")
+security_logger.setLevel(logging.INFO)
+
+# Ensure logger has a handler (won't duplicate if app already configured it)
+if not security_logger.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter(
+        '%(asctime)s - SECURITY - %(levelname)s - %(message)s'
+    )
+    handler.setFormatter(formatter)
+    security_logger.addHandler(handler)
 
 
 # ==========================================================
