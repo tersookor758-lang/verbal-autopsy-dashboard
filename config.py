@@ -21,6 +21,23 @@ class Config:
         os.urandom(24)
     )
 
+
+    # -----------------------------
+    # JWT Authentication
+    # -----------------------------
+
+    JWT_SECRET_KEY = os.environ.get(
+        "JWT_SECRET_KEY",
+        "change-this-jwt-secret-in-production"
+    )
+
+    JWT_TOKEN_LOCATION = ["headers"]
+
+    JWT_HEADER_NAME = "Authorization"
+
+    JWT_HEADER_TYPE = "Bearer"
+
+
     # -----------------------------
     # Database
     # -----------------------------
@@ -37,14 +54,6 @@ class Config:
             1
         )
 
-    # SQLALCHEMY_DATABASE_URI = (
-
-    #     DATABASE_URL
-
-    #     or f"sqlite:///{os.path.join(BASE_DIR, 'verbal_autopsy.db')}"
-
-    # )
-
 
     SQLALCHEMY_DATABASE_URI = (
         DATABASE_URL
@@ -55,11 +64,13 @@ class Config:
 
     SQLALCHEMY_ECHO = False
 
+
     # -----------------------------
     # JSON
     # -----------------------------
 
     JSON_SORT_KEYS = False
+
 
     # -----------------------------
     # File Uploads
