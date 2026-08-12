@@ -6,7 +6,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 
 from config import Config
-from extensions import db, login_manager, jwt
+from extensions import db, login_manager, jwt, limiter
 
 # Import models so SQLAlchemy knows about them
 from models import User, VerbalAutopsy
@@ -92,6 +92,8 @@ def create_app():
     login_manager.init_app(app)
 
     jwt.init_app(app)
+
+    limiter.init_app(app)
 
     # ------------------------------------------
     # Import Routes
