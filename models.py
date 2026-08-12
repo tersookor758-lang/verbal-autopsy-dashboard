@@ -52,9 +52,23 @@ class User(UserMixin, db.Model):
 
     # -----------------------------
     # Password Methods
-    # -----------------------------
+    # ------------------------------
 
-    def set_password(self, password):
+    def set_password(self, password, validate=False):
+        """
+        Hash and set the password.
+        
+        Args:
+            password (str): Plain text password
+            validate (bool): If True, validate password strength before setting
+            
+        Raises:
+            PasswordValidationError: If validate=True and password is weak
+        """
+        if validate:
+            from api.auth_security import validate_password_strength
+            validate_password_strength(password)
+        
         self.password_hash = generate_password_hash(
             password
         )
