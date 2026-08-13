@@ -1,63 +1,98 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function () {
 
-    const stateSelect = document.getElementById("state-select");
-    const lgaSelect = document.getElementById("lga-select");
+    const themeToggle = document.getElementById("themeToggle");
+    const themeIcon = document.getElementById("themeIcon");
 
-    if (!stateSelect || !lgaSelect || !window.allLgas) {
-        return;
+    function getCurrentTheme() {
+        return document.documentElement.getAttribute("data-theme") || "light";
     }
 
-    function populateLgas(selectedState, selectedLga = "") {
+    function updateThemeIcon(theme) {
 
-        lgaSelect.innerHTML = "";
-
-        const defaultOption = document.createElement("option");
-        defaultOption.value = "";
-
-        if (!selectedState) {
-
-            defaultOption.textContent = "Select a State First";
-
-            lgaSelect.appendChild(defaultOption);
-
-            lgaSelect.disabled = true;
-
+        if (!themeIcon) {
             return;
         }
 
-        defaultOption.textContent = "All LGAs";
-        lgaSelect.appendChild(defaultOption);
+        if (theme === "dark") {
 
-        const lgas = window.allLgas[selectedState] || [];
+            themeIcon.classList.remove("bi-moon-fill");
+            themeIcon.classList.add("bi-sun-fill");
 
-        lgas.forEach((lga) => {
+        } else {
 
-            const option = document.createElement("option");
+            themeIcon.classList.remove("bi-sun-fill");
+            themeIcon.classList.add("bi-moon-fill");
 
-            option.value = lga;
-            option.textContent = lga;
+        }
+    }
 
-            if (lga === selectedLga) {
-                option.selected = true;
-            }
 
-            lgaSelect.appendChild(option);
+    function applyTheme(theme) {
+
+        document.documentElement.setAttribute(
+            "data-theme",
+            theme
+        );
+
+        localStorage.setItem(
+            "theme",
+            theme
+        );
+
+        updateThemeIcon(theme);
+    }
+
+
+    // Initialise theme
+
+    const savedTheme = localStorage.getItem("theme");
+
+    if (savedTheme === "dark" || savedTheme === "light") {
+
+        applyTheme(savedTheme);
+
+    } else {
+
+        applyTheme("light");
+
+    }
+
+
+    // Toggle theme
+
+    if (themeToggle) {
+
+        themeToggle.addEventListener("click", function () {
+
+            const currentTheme = getCurrentTheme();
+
+            const newTheme =
+                currentTheme === "dark"
+                    ? "light"
+                    : "dark";
+
+            applyTheme(newTheme);
 
         });
 
-        lgaSelect.disabled = false;
     }
 
-    populateLgas(
-        stateSelect.value,
-        lgaSelect.value
-    );
 
-    stateSelect.addEventListener("change", () => {
+    // Allow elements elsewhere in the dashboard
+    // to request a theme refresh.
 
-        populateLgas(
-            stateSelect.value
-        );
+    window.addEventListener("storage", function (event) {
+
+        if (event.key === "theme") {
+
+            const theme =
+                event.newValue === "dark"
+                    ? "dark"
+                    : "light";
+
+            applyTheme(theme);
+
+        }
 
     });
 
