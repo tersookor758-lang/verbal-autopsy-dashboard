@@ -9,39 +9,61 @@ BASE_DIR = os.path.abspath(
 
 class Config:
     """
-    Base configuration for the
-    Verbal Autopsy Outcome Dashboard.
+    Base configuration for the Verbal Autopsy Outcome Dashboard.
     """
 
-    # -----------------------------
-    # Flask
-    # -----------------------------
+    # ==========================================================
+    # APPLICATION
+    # ==========================================================
 
     ENVIRONMENT = os.environ.get(
         "FLASK_ENV",
-        os.environ.get("APP_ENV", "development")
+        os.environ.get(
+            "APP_ENV",
+            "development"
+        )
     ).lower()
 
     IS_PRODUCTION = ENVIRONMENT == "production"
 
-    SECRET_KEY = os.environ.get("SECRET_KEY")
 
-    if not SECRET_KEY and not IS_PRODUCTION:
+    # ==========================================================
+    # SECURITY
+    # ==========================================================
 
-        SECRET_KEY = "dev-only-session-secret-change-me"
+    SECRET_KEY = os.environ.get(
+        "SECRET_KEY"
+    )
+
+    if not SECRET_KEY:
+        SECRET_KEY = (
+            "presentation-session-secret-"
+            "change-before-production"
+        )
 
 
-    # -----------------------------
-    # JWT Authentication
-    # -----------------------------
+    JWT_SECRET_KEY = os.environ.get(
+        "JWT_SECRET_KEY"
+    )
 
-    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+    if not JWT_SECRET_KEY:
+        JWT_SECRET_KEY = (
+            "presentation-jwt-secret-"
+            "change-before-production"
+        )
 
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
 
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(
+        minutes=15
+    )
 
-    JWT_TOKEN_LOCATION = ["headers"]
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(
+        days=30
+    )
+
+    JWT_TOKEN_LOCATION = [
+        "headers"
+    ]
 
     JWT_HEADER_NAME = "Authorization"
 
@@ -50,36 +72,69 @@ class Config:
     JWT_ALGORITHM = "HS256"
 
 
-    # -----------------------------
-    # Database
-    # -----------------------------
+    # ==========================================================
+    # DATABASE
+    # ==========================================================
+    #
+    # PRESENTATION MODE:
+    #
+    # The MySQL credentials currently in .env are rejected by
+    # the MySQL Server 8.0 installation on this computer.
+    #
+    # Therefore, the bundled SQLite database is used for the
+    # presentation so the dashboard can run immediately.
+    #
+    # The MySQL URL can still be supplied through DATABASE_URL
+    # when the credentials are correct.
+    #
+    # Set USE_MYSQL=true when the MySQL account is working.
+    # ==========================================================
 
     DATABASE_URL = os.environ.get(
         "DATABASE_URL"
     )
 
-    if DATABASE_URL:
+    USE_MYSQL = (
+        os.environ.get(
+            "USE_MYSQL",
+            "false"
+        ).lower()
+        == "true"
+    )
 
-        DATABASE_URL = DATABASE_URL.replace(
+
+    SQLITE_DATABASE_PATH = os.path.join(
+        BASE_DIR,
+        "verbal_autopsy.db"
+    )
+
+
+    if USE_MYSQL and DATABASE_URL:
+
+        DATABASE_URI = DATABASE_URL.replace(
             "postgres://",
             "postgresql://",
             1
         )
 
+    else:
 
-    SQLALCHEMY_DATABASE_URI = (
-        DATABASE_URL
-        or "mysql+pymysql://tersoo:tersoo2007@localhost:3306/verbal_autopsy"
-    )
+        DATABASE_URI = (
+            "sqlite:///"
+            + SQLITE_DATABASE_PATH
+        )
+
+
+    SQLALCHEMY_DATABASE_URI = DATABASE_URI
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     SQLALCHEMY_ECHO = False
 
 
-    # -----------------------------
-    # Session Cookies (Security)
-    # -----------------------------
+    # ==========================================================
+    # SESSION SECURITY
+    # ==========================================================
 
     SESSION_COOKIE_SECURE = IS_PRODUCTION
 
@@ -87,31 +142,35 @@ class Config:
 
     SESSION_COOKIE_SAMESITE = "Lax"
 
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
+    PERMANENT_SESSION_LIFETIME = timedelta(
+        hours=24
+    )
 
 
-    # -----------------------------
+    # ==========================================================
+    # JSON
+    # ==========================================================
 
     JSON_SORT_KEYS = False
 
 
-    # -----------------------------
-    # File Uploads
-    # -----------------------------
+    # ==========================================================
+    # FILE UPLOADS
+    # ==========================================================
 
     UPLOAD_FOLDER = os.path.join(
         BASE_DIR,
         "uploads"
     )
 
-    MAX_CONTENT_LENGTH = 50 * 1024 * 1024
-    # Maximum upload size: 50 MB
+    MAX_CONTENT_LENGTH = (
+        50 * 1024 * 1024
+    )
+
 
     ALLOWED_UPLOAD_EXTENSIONS = {
-
         "csv",
         "xlsx",
         "xls",
         "json"
-
     }
