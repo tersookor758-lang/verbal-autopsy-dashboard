@@ -40,7 +40,7 @@ A Flask-based web application for managing, analyzing, validating, and visualizi
 - Chart.js
 - Pandas
 - OpenPyXL
-- SQLite
+- Mysql
 
 ---
 
