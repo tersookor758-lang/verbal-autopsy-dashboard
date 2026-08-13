@@ -1,9 +1,10 @@
 {% if pagination.pages > 1 %}
 
-<nav aria-label="Dashboard Pagination">
+<nav aria-label="Records pagination">
 
-    <ul class="pagination justify-content-center">
+    <ul class="pagination justify-content-center mb-0">
 
+        <!-- Previous -->
         {% if pagination.has_prev %}
 
         <li class="page-item">
@@ -11,20 +12,19 @@
             <a
                 class="page-link"
                 href="{{ url_for(
-                    'dashboard.index',
+                    request.endpoint,
                     page=pagination.prev_num,
-                    state=request.args.get('state'),
-                    lga=request.args.get('lga'),
-                    facility=request.args.get('facility'),
-                    cause=request.args.get('cause'),
-                    sex=request.args.get('sex'),
-                    year=request.args.get('year'),
-                    patient=request.args.get('patient')
+                    state=request.args.get('state', ''),
+                    lga=request.args.get('lga', ''),
+                    facility=request.args.get('facility', ''),
+                    cause=request.args.get('cause', ''),
+                    sex=request.args.get('sex', ''),
+                    year=request.args.get('year', ''),
+                    patient=request.args.get('patient', '')
                 ) }}"
             >
-
+                <i class="bi bi-chevron-left"></i>
                 Previous
-
             </a>
 
         </li>
@@ -34,9 +34,8 @@
         <li class="page-item disabled">
 
             <span class="page-link">
-
+                <i class="bi bi-chevron-left"></i>
                 Previous
-
             </span>
 
         </li>
@@ -44,7 +43,7 @@
         {% endif %}
 
 
-
+        <!-- Page Numbers -->
         {% for page_num in pagination.iter_pages(
             left_edge=2,
             left_current=2,
@@ -58,10 +57,11 @@
 
                 <li class="page-item active">
 
-                    <span class="page-link">
-
+                    <span
+                        class="page-link"
+                        aria-current="page"
+                    >
                         {{ page_num }}
-
                     </span>
 
                 </li>
@@ -73,20 +73,18 @@
                     <a
                         class="page-link"
                         href="{{ url_for(
-                            'dashboard.index',
+                            request.endpoint,
                             page=page_num,
-                            state=request.args.get('state'),
-                            lga=request.args.get('lga'),
-                            facility=request.args.get('facility'),
-                            cause=request.args.get('cause'),
-                            sex=request.args.get('sex'),
-                            year=request.args.get('year'),
-                            patient=request.args.get('patient')
+                            state=request.args.get('state', ''),
+                            lga=request.args.get('lga', ''),
+                            facility=request.args.get('facility', ''),
+                            cause=request.args.get('cause', ''),
+                            sex=request.args.get('sex', ''),
+                            year=request.args.get('year', ''),
+                            patient=request.args.get('patient', '')
                         ) }}"
                     >
-
                         {{ page_num }}
-
                     </a>
 
                 </li>
@@ -95,22 +93,20 @@
 
             {% else %}
 
-                <li class="page-item disabled">
+            <li class="page-item disabled">
 
-                    <span class="page-link">
+                <span class="page-link">
+                    …
+                </span>
 
-                        ...
-
-                    </span>
-
-                </li>
+            </li>
 
             {% endif %}
 
         {% endfor %}
 
 
-
+        <!-- Next -->
         {% if pagination.has_next %}
 
         <li class="page-item">
@@ -118,20 +114,19 @@
             <a
                 class="page-link"
                 href="{{ url_for(
-                    'dashboard.index',
+                    request.endpoint,
                     page=pagination.next_num,
-                    state=request.args.get('state'),
-                    lga=request.args.get('lga'),
-                    facility=request.args.get('facility'),
-                    cause=request.args.get('cause'),
-                    sex=request.args.get('sex'),
-                    year=request.args.get('year'),
-                    patient=request.args.get('patient')
+                    state=request.args.get('state', ''),
+                    lga=request.args.get('lga', ''),
+                    facility=request.args.get('facility', ''),
+                    cause=request.args.get('cause', ''),
+                    sex=request.args.get('sex', ''),
+                    year=request.args.get('year', ''),
+                    patient=request.args.get('patient', '')
                 ) }}"
             >
-
                 Next
-
+                <i class="bi bi-chevron-right"></i>
             </a>
 
         </li>
@@ -141,9 +136,8 @@
         <li class="page-item disabled">
 
             <span class="page-link">
-
                 Next
-
+                <i class="bi bi-chevron-right"></i>
             </span>
 
         </li>
