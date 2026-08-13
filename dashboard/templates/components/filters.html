@@ -12,11 +12,16 @@
 
         <form method="GET">
 
+            <!-- First row of filters -->
             <div class="row">
 
+                <!-- State -->
                 <div class="col-lg-3 col-md-6 mb-3">
 
-                    <label class="form-label">
+                    <label
+                        for="state-select"
+                        class="form-label"
+                    >
                         State
                     </label>
 
@@ -48,11 +53,14 @@
                 </div>
 
 
-
+                <!-- LGA -->
                 <div class="col-lg-3 col-md-6 mb-3">
 
-                    <label class="form-label">
-                        LGA
+                    <label
+                        for="lga-select"
+                        class="form-label"
+                    >
+                        Local Government Area
                     </label>
 
                     <select
@@ -64,36 +72,50 @@
                         {% endif %}
                     >
 
-                        <option value="">
-                            Select a State First
-                        </option>
+                        {% if request.args.get("state") %}
 
-                        {% for lga in lgas %}
+                            <option value="">
+                                All LGAs
+                            </option>
 
-                        <option
-                            value="{{ lga }}"
-                            {% if request.args.get("lga") == lga %}
-                                selected
-                            {% endif %}
-                        >
-                            {{ lga }}
-                        </option>
+                            {% for lga in lgas %}
 
-                        {% endfor %}
+                            <option
+                                value="{{ lga }}"
+                                {% if request.args.get("lga") == lga %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ lga }}
+                            </option>
+
+                            {% endfor %}
+
+                        {% else %}
+
+                            <option value="">
+                                Select a State First
+                            </option>
+
+                        {% endif %}
 
                     </select>
 
                 </div>
 
 
-
+                <!-- Facility -->
                 <div class="col-lg-3 col-md-6 mb-3">
 
-                    <label class="form-label">
+                    <label
+                        for="facility-select"
+                        class="form-label"
+                    >
                         Facility
                     </label>
 
                     <select
+                        id="facility-select"
                         name="facility"
                         class="form-select"
                     >
@@ -120,14 +142,66 @@
                 </div>
 
 
-
+                <!-- Sex -->
                 <div class="col-lg-3 col-md-6 mb-3">
 
-                    <label class="form-label">
+                    <label
+                        for="sex-select"
+                        class="form-label"
+                    >
+                        Sex
+                    </label>
+
+                    <select
+                        id="sex-select"
+                        name="sex"
+                        class="form-select"
+                    >
+
+                        <option value="">
+                            All
+                        </option>
+
+                        <option
+                            value="Male"
+                            {% if request.args.get("sex") == "Male" %}
+                                selected
+                            {% endif %}
+                        >
+                            Male
+                        </option>
+
+                        <option
+                            value="Female"
+                            {% if request.args.get("sex") == "Female" %}
+                                selected
+                            {% endif %}
+                        >
+                            Female
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <!-- Second row of filters -->
+            <div class="row">
+
+                <!-- Cause of Death -->
+                <div class="col-lg-3 col-md-6 mb-3">
+
+                    <label
+                        for="cause-select"
+                        class="form-label"
+                    >
                         Cause of Death
                     </label>
 
                     <select
+                        id="cause-select"
                         name="cause"
                         class="form-select"
                     >
@@ -153,19 +227,19 @@
 
                 </div>
 
-            </div>
 
-
-
-            <div class="row">
-
+                <!-- Interview Year -->
                 <div class="col-lg-3 col-md-6 mb-3">
 
-                    <label class="form-label">
+                    <label
+                        for="year-select"
+                        class="form-label"
+                    >
                         Interview Year
                     </label>
 
                     <select
+                        id="year-select"
                         name="year"
                         class="form-select"
                     >
@@ -192,15 +266,19 @@
                 </div>
 
 
-
+                <!-- Patient ID -->
                 <div class="col-lg-3 col-md-6 mb-3">
 
-                    <label class="form-label">
+                    <label
+                        for="patient-input"
+                        class="form-label"
+                    >
                         Patient ID
                     </label>
 
                     <input
                         type="text"
+                        id="patient-input"
                         name="patient"
                         class="form-control"
                         placeholder="Search Patient ID"
@@ -212,21 +290,30 @@
             </div>
 
 
-
+            <!-- Buttons -->
             <div class="mt-2">
 
                 <button
                     type="submit"
                     class="btn btn-primary"
                 >
+
+                    <i class="bi bi-funnel"></i>
+
                     Apply Filters
+
                 </button>
 
+
                 <a
-                    href="{{ url_for('dashboard.index') }}"
+                    href="{{ url_for('dashboard.records') }}"
                     class="btn btn-secondary"
                 >
+
+                    <i class="bi bi-arrow-counterclockwise"></i>
+
                     Reset
+
                 </a>
 
             </div>
