@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from flask import Flask
-
 from flask_cors import CORS
 
 from config import Config
@@ -26,6 +25,7 @@ from models import (
 from dashboard import dashboard_bp
 from api import api_bp
 from auth import auth_bp
+from admin import admin_bp
 
 
 # ==========================================================
@@ -38,13 +38,11 @@ def validate_security_config(app):
     """
 
     if not app.config.get("SECRET_KEY"):
-
         raise RuntimeError(
             "SECRET_KEY must be set when running in production."
         )
 
     if not app.config.get("JWT_SECRET_KEY"):
-
         raise RuntimeError(
             "JWT_SECRET_KEY environment variable must be set."
         )
@@ -86,12 +84,9 @@ def create_default_admin():
             is_active=True,
         )
 
-        admin.set_password(
-            "admin123"
-        )
+        admin.set_password("admin123")
 
         db.session.add(admin)
-
         db.session.commit()
 
         print("=" * 60)
@@ -116,57 +111,36 @@ def create_app():
     registers blueprints, and creates database tables.
     """
 
-    app = Flask(
-        __name__
-    )
+    app = Flask(__name__)
 
     # ------------------------------------------------------
     # Application Configuration
     # ------------------------------------------------------
 
-    app.config.from_object(
-        Config
-    )
+    app.config.from_object(Config)
 
     # ------------------------------------------------------
     # Validate Security Configuration
     # ------------------------------------------------------
 
-    validate_security_config(
-        app
-    )
+    validate_security_config(app)
 
     # ------------------------------------------------------
     # Initialize Extensions
     # ------------------------------------------------------
 
-    db.init_app(
-        app
-    )
+    db.init_app(app)
 
-    login_manager.init_app(
-        app
-    )
+    login_manager.init_app(app)
 
-    jwt.init_app(
-        app
-    )
+    jwt.init_app(app)
 
-    limiter.init_app(
-        app
-    )
+    limiter.init_app(app)
 
-    CORS(
-        app
-    )
+    CORS(app)
 
     # ------------------------------------------------------
     # Import Route Modules
-    #
-    # Authentication routes are imported automatically by
-    # auth/__init__.py.
-    #
-    # Do NOT import auth.routes here.
     # ------------------------------------------------------
 
     import dashboard.routes
@@ -174,6 +148,7 @@ def create_app():
     import api.api
     import api.auth
     import api.routes
+    import admin.routes
 
     # ------------------------------------------------------
     # Register Dashboard Blueprint
@@ -198,6 +173,14 @@ def create_app():
     app.register_blueprint(
         api_bp,
         url_prefix="/api"
+    )
+
+    # ------------------------------------------------------
+    # Register Admin Blueprint
+    # ------------------------------------------------------
+
+    app.register_blueprint(
+        admin_bp
     )
 
     # ------------------------------------------------------
