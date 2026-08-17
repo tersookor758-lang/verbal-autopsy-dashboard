@@ -2,14 +2,25 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from flask import Flask, jsonify
+from flask import Flask
+
 from flask_cors import CORS
 
 from config import Config
-from extensions import db, login_manager, jwt, limiter
+
+from extensions import (
+    db,
+    login_manager,
+    jwt,
+    limiter,
+)
 
 # Import models so SQLAlchemy knows about them
-from models import User, VerbalAutopsy
+from models import (
+    User,
+    VerbalAutopsy,
+    RefreshToken,
+)
 
 # Blueprints
 from dashboard import dashboard_bp
@@ -17,6 +28,9 @@ from api import api_bp
 from auth import auth_bp
 
 
+# ==========================================================
+# Security Configuration
+# ==========================================================
 
 def validate_security_config(app):
     """
@@ -36,91 +50,158 @@ def validate_security_config(app):
         )
 
 
+# ==========================================================
+# Default Administrator
+# ==========================================================
+
 def create_default_admin():
     """
-    Creates the default administrator account if there are no users in the database.
-    
-    This is disabled in production for security.
+    Create the default administrator account if the database
+    does not contain any users.
+
+    Default administrator:
+        Username: admin
+        Password: admin123
+
+    The account is automatically verified because the initial
+    administrator must be able to access the system.
+
+    Change the default password immediately in a real
+    deployment.
     """
 
-    # Disable default admin creation in production
+    # Never create a default account in production.
     if Config.IS_PRODUCTION:
         return
 
+    # Only create the default administrator when there are
+    # no users in the database.
     if User.query.count() == 0:
 
         admin = User(
             username="admin",
             email="admin@example.com",
-            role="Administrator"
+            role="admin",
+            is_verified=True,
+            is_active=True,
         )
 
-        admin.set_password("admin123")
+        admin.set_password(
+            "admin123"
+        )
 
         db.session.add(admin)
+
         db.session.commit()
 
         print("=" * 60)
         print("DEFAULT ADMIN ACCOUNT CREATED")
         print("Username : admin")
         print("Password : admin123")
+        print("Role     : admin")
+        print("Verified : True")
         print("=" * 60)
 
+
+# ==========================================================
+# Application Factory
+# ==========================================================
 
 def create_app():
     """
     Application factory.
 
     Creates and configures the Flask application,
-    initializes extensions,
-    registers blueprints,
-    and creates database tables.
+    initializes extensions, imports route modules,
+    registers blueprints, and creates database tables.
     """
 
-    app = Flask(__name__)
+    app = Flask(
+        __name__
+    )
 
-    app.config.from_object(Config)
+    # ------------------------------------------------------
+    # Application Configuration
+    # ------------------------------------------------------
 
-    validate_security_config(app)
+    app.config.from_object(
+        Config
+    )
 
-    # ------------------------------------------
+    # ------------------------------------------------------
+    # Validate Security Configuration
+    # ------------------------------------------------------
+
+    validate_security_config(
+        app
+    )
+
+    # ------------------------------------------------------
     # Initialize Extensions
-    # ------------------------------------------
+    # ------------------------------------------------------
 
-    db.init_app(app)
+    db.init_app(
+        app
+    )
 
-    login_manager.init_app(app)
+    login_manager.init_app(
+        app
+    )
 
-    jwt.init_app(app)
+    jwt.init_app(
+        app
+    )
 
-    limiter.init_app(app)
+    limiter.init_app(
+        app
+    )
 
-    # ------------------------------------------
-    # Import Routes
-    # ------------------------------------------
+    CORS(
+        app
+    )
+
+    # ------------------------------------------------------
+    # Import Route Modules
+    #
+    # Authentication routes are imported automatically by
+    # auth/__init__.py.
+    #
+    # Do NOT import auth.routes here.
+    # ------------------------------------------------------
 
     import dashboard.routes
     import api.api
     import api.auth
     import api.routes
-    import auth.routes
 
-    # ------------------------------------------
-    # Register Blueprints
-    # ------------------------------------------
+    # ------------------------------------------------------
+    # Register Dashboard Blueprint
+    # ------------------------------------------------------
 
-    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(
+        dashboard_bp
+    )
 
-    app.register_blueprint(auth_bp)
+    # ------------------------------------------------------
+    # Register Authentication Blueprint
+    # ------------------------------------------------------
+
+    app.register_blueprint(
+        auth_bp
+    )
+
+    # ------------------------------------------------------
+    # Register API Blueprint
+    # ------------------------------------------------------
 
     app.register_blueprint(
         api_bp,
         url_prefix="/api"
     )
 
-    # ------------------------------------------
-    # Create Database Tables
-    # ------------------------------------------
+    # ------------------------------------------------------
+    # Database Initialization
+    # ------------------------------------------------------
 
     with app.app_context():
 
@@ -131,8 +212,16 @@ def create_app():
     return app
 
 
+# ==========================================================
+# Create Application
+# ==========================================================
+
 app = create_app()
 
+
+# ==========================================================
+# Development Server
+# ==========================================================
 
 if __name__ == "__main__":
 
