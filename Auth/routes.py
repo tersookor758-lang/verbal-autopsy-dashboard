@@ -2,6 +2,7 @@
 Authentication Routes
 
 Handles:
+- User registration
 - Login
 - Logout
 - Role-based authentication checks
@@ -24,14 +25,25 @@ from flask_login import (
 
 from auth import auth_bp
 from models import User
+from extensions import db
 
 
 # ==========================================================
-# Login
+# Registration
 # ==========================================================
 
-@auth_bp.route("/login", methods=["GET", "POST"])
-def login():
+@auth_bp.route("/register", methods=["GET", "POST"])
+def register():
+    """
+    Register a new dashboard user.
+
+    Newly registered users:
+        - receive the normal "user" role
+        - are not verified
+        - are active
+        - must be approved by an administrator
+          before they can log in
+    """
 
     # ------------------------------------------------------
     # Already logged in
@@ -44,8 +56,167 @@ def login():
         )
 
     # ------------------------------------------------------
-    # Login submission
+    # Registration submission
     # ------------------------------------------------------
+
+    if request.method == "POST":
+
+        username = request.form.get(
+            "username",
+            ""
+        ).strip()
+
+        email = request.form.get(
+            "email",
+            ""
+        ).strip().lower()
+
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        confirm_password = request.form.get(
+            "confirm_password",
+            ""
+        )
+
+        # --------------------------------------------------
+        # Required fields
+        # --------------------------------------------------
+
+        if not username or not email or not password:
+
+            flash(
+                "Username, email and password are required.",
+                "danger"
+            )
+
+            return render_template(
+                "register.html"
+            )
+
+        # --------------------------------------------------
+        # Password confirmation
+        # --------------------------------------------------
+
+        if password != confirm_password:
+
+            flash(
+                "Passwords do not match.",
+                "danger"
+            )
+
+            return render_template(
+                "register.html"
+            )
+
+        # --------------------------------------------------
+        # Check username
+        # --------------------------------------------------
+
+        existing_username = User.query.filter_by(
+            username=username
+        ).first()
+
+        if existing_username:
+
+            flash(
+                "That username is already registered.",
+                "danger"
+            )
+
+            return render_template(
+                "register.html"
+            )
+
+        # --------------------------------------------------
+        # Check email
+        # --------------------------------------------------
+
+        existing_email = User.query.filter_by(
+            email=email
+        ).first()
+
+        if existing_email:
+
+            flash(
+                "That email address is already registered.",
+                "danger"
+            )
+
+            return render_template(
+                "register.html"
+            )
+
+        # --------------------------------------------------
+        # Create user
+        # --------------------------------------------------
+
+        user = User(
+            username=username,
+            email=email,
+
+            # New registrations always start as
+            # regular users.
+            role="user",
+
+            # Administrator approval required.
+            is_verified=False,
+
+            # Account exists but cannot log in until
+            # approved.
+            is_active=True,
+        )
+
+        user.set_password(
+            password
+        )
+
+        db.session.add(
+            user
+        )
+
+        db.session.commit()
+
+        # --------------------------------------------------
+        # Registration successful
+        # --------------------------------------------------
+
+        flash(
+            "Registration successful. "
+            "Your account is waiting for administrator approval.",
+            "success"
+        )
+
+        return redirect(
+            url_for("auth.login")
+        )
+
+    # ------------------------------------------------------
+    # Display registration page
+    # ------------------------------------------------------
+
+    return render_template(
+        "register.html"
+    )
+
+
+# ==========================================================
+# Login
+# ==========================================================
+
+@auth_bp.route("/login", methods=["GET", "POST"])
+def login():
+    """
+    Authenticate a user and start a Flask-Login session.
+    """
+
+    if current_user.is_authenticated:
+
+        return redirect(
+            url_for("dashboard.index")
+        )
 
     if request.method == "POST":
 
@@ -59,16 +230,12 @@ def login():
             ""
         )
 
-        # --------------------------------------------------
-        # Find user
-        # --------------------------------------------------
-
         user = User.query.filter_by(
             username=username
         ).first()
 
         # --------------------------------------------------
-        # Check username/password
+        # Credentials
         # --------------------------------------------------
 
         if not user or not user.check_password(password):
@@ -83,22 +250,7 @@ def login():
             )
 
         # --------------------------------------------------
-        # Normalize role
-        #
-        # This allows existing accounts using
-        # "Administrator" to continue working while the
-        # system is being migrated to "admin".
-        # --------------------------------------------------
-
-        role = (
-            user.role or ""
-        ).strip().lower()
-
-        # --------------------------------------------------
-        # Check account status
-        #
-        # Admins can still be deactivated by the system,
-        # so is_active applies to everyone.
+        # Account status
         # --------------------------------------------------
 
         if not user.is_active:
@@ -113,21 +265,17 @@ def login():
                 "login.html"
             )
 
-        # ==================================================
+        # --------------------------------------------------
+        # Normalize role
+        # --------------------------------------------------
+
+        role = (
+            user.role or ""
+        ).strip().lower()
+
+        # --------------------------------------------------
         # ADMIN
-        # ==================================================
-        #
-        # IMPORTANT:
-        # Admins DO NOT require is_verified.
-        #
-        # We accept both:
-        #
-        #     admin
-        #     Administrator
-        #
-        # because your existing database may still contain
-        # the old role name.
-        # ==================================================
+        # --------------------------------------------------
 
         if role in {
             "admin",
@@ -145,23 +293,27 @@ def login():
                 url_for("dashboard.index")
             )
 
-        # ==================================================
+        # --------------------------------------------------
+        # NON-ADMIN USERS MUST BE APPROVED
+        # --------------------------------------------------
+
+        if not user.is_verified:
+
+            flash(
+                "Your account has not yet been approved "
+                "by an administrator.",
+                "warning"
+            )
+
+            return render_template(
+                "login.html"
+            )
+
+        # --------------------------------------------------
         # UPLOAD USER
-        # ==================================================
+        # --------------------------------------------------
 
         if role == "upload_user":
-
-            if not user.is_verified:
-
-                flash(
-                    "Your upload-user account has not yet "
-                    "been approved by an administrator.",
-                    "warning"
-                )
-
-                return render_template(
-                    "login.html"
-                )
 
             login_user(user)
 
@@ -174,9 +326,9 @@ def login():
                 url_for("dashboard.index")
             )
 
-        # ==================================================
+        # --------------------------------------------------
         # REGULAR USER
-        # ==================================================
+        # --------------------------------------------------
 
         if role == "user":
 
@@ -191,9 +343,9 @@ def login():
                 url_for("dashboard.index")
             )
 
-        # ==================================================
+        # --------------------------------------------------
         # UNKNOWN ROLE
-        # ==================================================
+        # --------------------------------------------------
 
         flash(
             "Your account has an invalid role. "
@@ -204,10 +356,6 @@ def login():
         return render_template(
             "login.html"
         )
-
-    # ------------------------------------------------------
-    # Display login page
-    # ------------------------------------------------------
 
     return render_template(
         "login.html"
@@ -221,11 +369,14 @@ def login():
 @auth_bp.route("/logout")
 @login_required
 def logout():
+    """
+    Log the current user out and return to login.
+    """
 
     logout_user()
 
     flash(
-        "You have been logged out.",
+        "You have been logged out successfully.",
         "info"
     )
 
