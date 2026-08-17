@@ -2,6 +2,7 @@
 Administrator Routes
 
 Handles:
+- Admin dashboard
 - User management
 - Approving new accounts
 - Activating accounts
@@ -70,6 +71,81 @@ def admin_required():
 
 
 # ==========================================================
+# Admin Dashboard
+# ==========================================================
+
+@admin_bp.route("/")
+@login_required
+def index():
+    """
+    Display the administrator dashboard.
+    """
+
+    access = admin_required()
+
+    if access is not True:
+        return access
+
+    # ------------------------------------------------------
+    # User Statistics
+    # ------------------------------------------------------
+
+    total_users = User.query.count()
+
+    pending_users = User.query.filter(
+        User.is_verified.is_(False)
+    ).count()
+
+    active_users = User.query.filter(
+        User.is_active.is_(True)
+    ).count()
+
+    inactive_users = User.query.filter(
+        User.is_active.is_(False)
+    ).count()
+
+    admin_users = User.query.filter(
+        User.role.in_([
+            "admin",
+            "administrator",
+        ])
+    ).count()
+
+    regular_users = User.query.filter(
+        User.role == "user"
+    ).count()
+
+    upload_users = User.query.filter(
+        User.role == "upload_user"
+    ).count()
+
+    # ------------------------------------------------------
+    # Recent Users
+    # ------------------------------------------------------
+
+    recent_users = (
+        User.query
+        .order_by(
+            User.created_at.desc()
+        )
+        .limit(5)
+        .all()
+    )
+
+    return render_template(
+        "admin/index.html",
+        total_users=total_users,
+        pending_users=pending_users,
+        active_users=active_users,
+        inactive_users=inactive_users,
+        admin_users=admin_users,
+        regular_users=regular_users,
+        upload_users=upload_users,
+        recent_users=recent_users,
+    )
+
+
+# ==========================================================
 # User Management
 # ==========================================================
 
@@ -120,22 +196,13 @@ def users():
 )
 @login_required
 def approve_user(user_id):
-    """
-    Approve a pending user account.
-    """
 
     access = admin_required()
 
     if access is not True:
         return access
 
-    user = User.query.get_or_404(
-        user_id
-    )
-
-    # ------------------------------------------------------
-    # Administrators do not require approval
-    # ------------------------------------------------------
+    user = User.query.get_or_404(user_id)
 
     if user.role in {
         "admin",
@@ -150,10 +217,6 @@ def approve_user(user_id):
         return redirect(
             url_for("admin.users")
         )
-
-    # ------------------------------------------------------
-    # Approve account
-    # ------------------------------------------------------
 
     user.is_verified = True
     user.is_active = True
@@ -180,18 +243,13 @@ def approve_user(user_id):
 )
 @login_required
 def activate_user(user_id):
-    """
-    Activate a user account.
-    """
 
     access = admin_required()
 
     if access is not True:
         return access
 
-    user = User.query.get_or_404(
-        user_id
-    )
+    user = User.query.get_or_404(user_id)
 
     user.is_active = True
 
@@ -217,25 +275,13 @@ def activate_user(user_id):
 )
 @login_required
 def deactivate_user(user_id):
-    """
-    Deactivate a user account.
-
-    Administrators cannot deactivate their own account
-    through this interface.
-    """
 
     access = admin_required()
 
     if access is not True:
         return access
 
-    user = User.query.get_or_404(
-        user_id
-    )
-
-    # ------------------------------------------------------
-    # Prevent self-deactivation
-    # ------------------------------------------------------
+    user = User.query.get_or_404(user_id)
 
     if user.id == current_user.id:
 
@@ -272,32 +318,18 @@ def deactivate_user(user_id):
 )
 @login_required
 def change_role(user_id):
-    """
-    Change a user's role.
-
-    Allowed roles:
-        user
-        upload_user
-        admin
-    """
 
     access = admin_required()
 
     if access is not True:
         return access
 
-    user = User.query.get_or_404(
-        user_id
-    )
+    user = User.query.get_or_404(user_id)
 
     new_role = request.form.get(
         "role",
         ""
     ).strip().lower()
-
-    # ------------------------------------------------------
-    # Validate role
-    # ------------------------------------------------------
 
     allowed_roles = {
         "user",
@@ -316,10 +348,6 @@ def change_role(user_id):
             url_for("admin.users")
         )
 
-    # ------------------------------------------------------
-    # Prevent changing own role
-    # ------------------------------------------------------
-
     if user.id == current_user.id:
 
         flash(
@@ -331,13 +359,8 @@ def change_role(user_id):
             url_for("admin.users")
         )
 
-    # ------------------------------------------------------
-    # Change role
-    # ------------------------------------------------------
-
     user.role = new_role
 
-    # Administrators are automatically verified.
     if new_role == "admin":
 
         user.is_verified = True
@@ -365,22 +388,13 @@ def change_role(user_id):
 )
 @login_required
 def delete_user(user_id):
-    """
-    Permanently delete a user account.
-    """
 
     access = admin_required()
 
     if access is not True:
         return access
 
-    user = User.query.get_or_404(
-        user_id
-    )
-
-    # ------------------------------------------------------
-    # Prevent deleting yourself
-    # ------------------------------------------------------
+    user = User.query.get_or_404(user_id)
 
     if user.id == current_user.id:
 
@@ -392,10 +406,6 @@ def delete_user(user_id):
         return redirect(
             url_for("admin.users")
         )
-
-    # ------------------------------------------------------
-    # Delete user
-    # ------------------------------------------------------
 
     db.session.delete(user)
 
