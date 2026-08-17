@@ -2,29 +2,36 @@ from datetime import datetime, timedelta
 import hashlib
 import secrets
 
-from flask import request, current_app
+from flask import current_app, request
 from flask_jwt_extended import create_access_token
 from flask_restx import Namespace, Resource, fields
 
 from api.api import api
-from api.rbac import get_authenticated_user, role_required
 from api.auth_security import (
-    validate_password_strength,
-    PasswordValidationError,
     log_failed_login,
-    log_successful_login,
     log_logout,
+    log_revoked_token_reuse,
+    log_successful_login,
     log_token_refresh,
-    log_revoked_token_reuse
 )
+from api.rbac import get_authenticated_user, role_required
 from extensions import db, limiter
 from models import RefreshToken, User
 
 
+# ==========================================================
+# Authentication Namespace
+# ==========================================================
+
 auth_ns = Namespace(
     "auth",
-    description="Authentication and authorization operations",
+    description="Authentication and authorization operations.",
 )
+
+
+# ==========================================================
+# Swagger Models
+# ==========================================================
 
 login_request_model = api.model(
     "LoginRequest",
@@ -40,6 +47,7 @@ login_request_model = api.model(
     },
 )
 
+
 refresh_request_model = api.model(
     "RefreshRequest",
     {
@@ -49,6 +57,7 @@ refresh_request_model = api.model(
         ),
     },
 )
+
 
 logout_request_model = api.model(
     "LogoutRequest",
@@ -60,12 +69,13 @@ logout_request_model = api.model(
     },
 )
 
+
 auth_user_model = api.model(
     "AuthUser",
     {
         "id": fields.Integer(
             required=True,
-            description="User ID.",
+            description="Unique user ID.",
         ),
         "username": fields.String(
             required=True,
@@ -77,10 +87,24 @@ auth_user_model = api.model(
         ),
         "role": fields.String(
             required=True,
-            description="User role.",
+            description="Application role: user, upload_user, or admin.",
+            enum=[
+                "user",
+                "upload_user",
+                "admin",
+            ],
+        ),
+        "is_verified": fields.Boolean(
+            required=True,
+            description="Whether an administrator has verified the account.",
+        ),
+        "is_active": fields.Boolean(
+            required=True,
+            description="Whether the account is active.",
         ),
     },
 )
+
 
 login_response_model = api.model(
     "LoginResponse",
@@ -92,7 +116,7 @@ login_response_model = api.model(
         ),
         "access_token": fields.String(
             required=True,
-            description="JWT access token for Bearer authentication.",
+            description="JWT access token used with Bearer authentication.",
         ),
         "refresh_token": fields.String(
             required=True,
@@ -111,10 +135,11 @@ login_response_model = api.model(
         "user": fields.Nested(
             auth_user_model,
             required=True,
-            description="Authenticated user details.",
+            description="Authenticated user information.",
         ),
     },
 )
+
 
 token_response_model = api.model(
     "TokenResponse",
@@ -125,15 +150,15 @@ token_response_model = api.model(
         ),
         "access_token": fields.String(
             required=True,
-            description="JWT access token for Bearer authentication.",
+            description="JWT access token.",
         ),
         "refresh_token": fields.String(
             required=True,
-            description="Opaque refresh token used to request a new access token.",
+            description="Replacement refresh token.",
         ),
         "token_type": fields.String(
             required=True,
-            description="Token type used in the Authorization header.",
+            description="Token type.",
             example="Bearer",
         ),
         "expires_in": fields.Integer(
@@ -143,6 +168,7 @@ token_response_model = api.model(
         ),
     },
 )
+
 
 message_response_model = api.model(
     "AuthMessageResponse",
@@ -154,44 +180,92 @@ message_response_model = api.model(
     },
 )
 
-ACCESS_TOKEN_LIFETIME = timedelta(minutes=15)
-REFRESH_TOKEN_LIFETIME = timedelta(days=30)
 
+# ==========================================================
+# Token Configuration
+# ==========================================================
+
+ACCESS_TOKEN_LIFETIME = timedelta(
+    minutes=15
+)
+
+REFRESH_TOKEN_LIFETIME = timedelta(
+    days=30
+)
+
+
+# ==========================================================
+# Helper Functions
+# ==========================================================
 
 def error_response(message, status_code):
-    return {"message": message}, status_code
+    """
+    Return a consistent API error response.
+    """
+
+    return {
+        "message": message
+    }, status_code
 
 
 def user_to_dict(user):
+    """
+    Convert a User model to a safe API response.
+
+    Never return password_hash or other sensitive fields.
+    """
+
     return {
         "id": user.id,
         "username": user.username,
         "email": user.email,
         "role": user.role,
+        "is_verified": bool(user.is_verified),
+        "is_active": bool(user.is_active),
     }
 
 
 def hash_refresh_token(token):
-    """Hash a refresh token before storing or querying it."""
-    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+    """
+    Hash a refresh token before storing it.
+
+    The raw refresh token is never stored in the database.
+    """
+
+    return hashlib.sha256(
+        token.encode("utf-8")
+    ).hexdigest()
 
 
 def create_refresh_token(user_id):
-    """Generate a refresh token and store only its hash."""
+    """
+    Generate and store an opaque refresh token.
+
+    Only the hash is stored in the database.
+    """
+
     raw_token = secrets.token_urlsafe(64)
 
-    db.session.add(
-        RefreshToken(
-            user_id=user_id,
-            token_hash=hash_refresh_token(raw_token),
-            expires_at=datetime.utcnow() + REFRESH_TOKEN_LIFETIME,
-        )
+    refresh_token = RefreshToken(
+        user_id=user_id,
+        token_hash=hash_refresh_token(raw_token),
+        expires_at=datetime.utcnow() + REFRESH_TOKEN_LIFETIME,
     )
+
+    db.session.add(refresh_token)
 
     return raw_token
 
 
 def create_user_access_token(user):
+    """
+    Create a JWT access token for a user.
+
+    The database remains the source of truth for role,
+    verification and active status. Therefore, protected
+    requests still re-check the user in the database.
+    """
+
     return create_access_token(
         identity=str(user.id),
         additional_claims={
@@ -203,209 +277,689 @@ def create_user_access_token(user):
 
 
 def token_response(message, user, include_user=False):
-    access_token = create_user_access_token(user)
-    refresh_token = create_refresh_token(user.id)
+    """
+    Create a complete login/refresh response.
+    """
+
+    access_token = create_user_access_token(
+        user
+    )
+
+    refresh_token = create_refresh_token(
+        user.id
+    )
 
     response = {
         "message": message,
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "Bearer",
-        "expires_in": int(ACCESS_TOKEN_LIFETIME.total_seconds()),
+        "expires_in": int(
+            ACCESS_TOKEN_LIFETIME.total_seconds()
+        ),
     }
 
     if include_user:
-        response["user"] = user_to_dict(user)
+        response["user"] = user_to_dict(
+            user
+        )
 
     return response
 
 
 def get_refresh_token(raw_token):
-    token_hash = hash_refresh_token(raw_token)
-    return RefreshToken.query.filter_by(token_hash=token_hash).first()
+    """
+    Retrieve a refresh token by its stored hash.
+    """
 
+    return RefreshToken.query.filter_by(
+        token_hash=hash_refresh_token(raw_token)
+    ).first()
+
+
+def account_can_authenticate(user):
+    """
+    Determine whether an account is permitted to log in.
+
+    Login requires:
+        - valid credentials
+        - verified account
+        - active account
+    """
+
+    if user is None:
+        return False
+
+    return (
+        bool(user.is_verified)
+        and bool(user.is_active)
+    )
+
+
+# ==========================================================
+# Login
+# ==========================================================
 
 @auth_ns.route("/login")
 class Login(Resource):
-    @auth_ns.expect(login_request_model, validate=False)
-    @auth_ns.response(200, "Login successful.", login_response_model)
-    @auth_ns.response(400, "Username and password are required.", message_response_model)
-    @auth_ns.response(401, "Invalid username or password.", message_response_model)
-    @auth_ns.response(429, "Too many login attempts. Please try again later.", message_response_model)
+    @auth_ns.expect(
+        login_request_model,
+        validate=False,
+    )
+    @auth_ns.response(
+        200,
+        "Login successful.",
+        login_response_model,
+    )
+    @auth_ns.response(
+        400,
+        "Username and password are required.",
+        message_response_model,
+    )
+    @auth_ns.response(
+        401,
+        "Invalid username or password.",
+        message_response_model,
+    )
+    @auth_ns.response(
+        403,
+        "Account is not verified or has been deactivated.",
+        message_response_model,
+    )
+    @auth_ns.response(
+        429,
+        "Too many login attempts.",
+        message_response_model,
+    )
     @limiter.limit("5 per minute")
     def post(self):
-        data = request.get_json(silent=True) or {}
-        username = data.get("username", "").strip()
-        password = data.get("password", "")
+        """
+        Authenticate a user and issue JWT + refresh tokens.
+        """
+
+        data = request.get_json(
+            silent=True
+        ) or {}
+
+        username = str(
+            data.get("username", "")
+        ).strip()
+
+        password = data.get(
+            "password",
+            ""
+        )
+
         ip_address = request.remote_addr
 
+        # --------------------------------------------------
+        # Validate request body
+        # --------------------------------------------------
+
         if not username or not password:
-            return error_response("Username and password are required.", 400)
+            return error_response(
+                "Username and password are required.",
+                400,
+            )
 
-        user = User.query.filter_by(username=username).first()
+        # --------------------------------------------------
+        # Find user
+        # --------------------------------------------------
 
-        if not user or not user.check_password(password):
-            # Log failed attempt
-            log_failed_login(username, ip_address, "Invalid credentials")
-            return error_response("Invalid username or password.", 401)
+        user = User.query.filter_by(
+            username=username
+        ).first()
 
+        # --------------------------------------------------
+        # Check credentials
+        # --------------------------------------------------
+
+        if not user or not user.check_password(
+            password
+        ):
+            log_failed_login(
+                username,
+                ip_address,
+                "Invalid credentials",
+            )
+
+            return error_response(
+                "Invalid username or password.",
+                401,
+            )
+
+        # --------------------------------------------------
+        # Credentials are correct, but account approval is
+        # still required.
+        # --------------------------------------------------
+
+        if not user.is_verified:
+
+            current_app.logger.warning(
+                "Login denied for unverified user %s (%s).",
+                user.id,
+                username,
+            )
+
+            log_failed_login(
+                username,
+                ip_address,
+                "Account not verified",
+            )
+
+            return error_response(
+                "Your account has not been verified by an administrator.",
+                403,
+            )
+
+        # --------------------------------------------------
+        # Account must also be active.
+        # --------------------------------------------------
+
+        if not user.is_active:
+
+            current_app.logger.warning(
+                "Login denied for inactive user %s (%s).",
+                user.id,
+                username,
+            )
+
+            log_failed_login(
+                username,
+                ip_address,
+                "Account deactivated",
+            )
+
+            return error_response(
+                "Your account has been deactivated.",
+                403,
+            )
+
+        # --------------------------------------------------
+        # Normalize legacy roles while the database is
+        # being migrated.
+        # --------------------------------------------------
+
+        legacy_role_map = {
+            "administrator": "admin",
+            "editor": "upload_user",
+            "viewer": "user",
+        }
+
+        normalized_role = legacy_role_map.get(
+            (user.role or "").strip().lower(),
+            (user.role or "").strip().lower(),
+        )
+
+        if normalized_role not in {
+            "user",
+            "upload_user",
+            "admin",
+        }:
+            current_app.logger.error(
+                "User %s has an invalid role: %s",
+                user.id,
+                user.role,
+            )
+
+            return error_response(
+                "Your account has an invalid role configuration. "
+                "Please contact an administrator.",
+                403,
+            )
+
+        # Keep the user's role consistent with the new system.
+        if user.role != normalized_role:
+            user.role = normalized_role
+            db.session.commit()
+
+        # --------------------------------------------------
         # Successful login
-        response = token_response("Login successful.", user, include_user=True)
-        
-        # Log successful login
-        log_successful_login(username, ip_address, user.id)
+        # --------------------------------------------------
+
+        response = token_response(
+            "Login successful.",
+            user,
+            include_user=True,
+        )
+
+        log_successful_login(
+            username,
+            ip_address,
+            user.id,
+        )
 
         return response, 200
 
 
+# ==========================================================
+# Refresh Token
+# ==========================================================
+
 @auth_ns.route("/refresh")
 class Refresh(Resource):
-    @auth_ns.expect(refresh_request_model, validate=False)
-    @auth_ns.response(200, "Token refreshed successfully.", token_response_model)
-    @auth_ns.response(400, "Refresh token is required.", message_response_model)
-    @auth_ns.response(401, "Refresh token is invalid, revoked, expired, or orphaned.", message_response_model)
+    @auth_ns.expect(
+        refresh_request_model,
+        validate=False,
+    )
+    @auth_ns.response(
+        200,
+        "Token refreshed successfully.",
+        token_response_model,
+    )
+    @auth_ns.response(
+        400,
+        "Refresh token is required.",
+        message_response_model,
+    )
+    @auth_ns.response(
+        401,
+        "Refresh token is invalid, revoked, or expired.",
+        message_response_model,
+    )
+    @auth_ns.response(
+        403,
+        "Account is no longer permitted to access the system.",
+        message_response_model,
+    )
     def post(self):
-        data = request.get_json(silent=True) or {}
-        raw_token = data.get("refresh_token", "").strip()
+        """
+        Rotate a refresh token and issue a new access token.
+        """
+
+        data = request.get_json(
+            silent=True
+        ) or {}
+
+        raw_token = str(
+            data.get(
+                "refresh_token",
+                ""
+            )
+        ).strip()
+
         ip_address = request.remote_addr
 
         if not raw_token:
-            return error_response("Refresh token is required.", 400)
+            return error_response(
+                "Refresh token is required.",
+                400,
+            )
 
-        refresh_token = get_refresh_token(raw_token)
+        refresh_token = get_refresh_token(
+            raw_token
+        )
 
         if not refresh_token:
-            return error_response("Invalid refresh token.", 401)
+            return error_response(
+                "Invalid refresh token.",
+                401,
+            )
 
-        user = User.query.get(refresh_token.user_id)
+        user = db.session.get(
+            User,
+            refresh_token.user_id
+        )
 
         if not user:
             refresh_token.revoked = True
+
             db.session.commit()
+
             log_token_refresh(
                 "unknown",
                 refresh_token.user_id,
                 success=False,
-                reason="User not found"
+                reason="User not found",
             )
-            return error_response("User associated with token was not found.", 401)
+
+            return error_response(
+                "User associated with token was not found.",
+                401,
+            )
+
+        # --------------------------------------------------
+        # Account must remain verified and active.
+        # This means an Admin can immediately stop a user's
+        # ability to obtain new access tokens.
+        # --------------------------------------------------
+
+        if not user.is_verified:
+            refresh_token.revoked = True
+
+            db.session.commit()
+
+            log_token_refresh(
+                user.username,
+                user.id,
+                success=False,
+                reason="Account not verified",
+            )
+
+            return error_response(
+                "Your account is no longer verified.",
+                403,
+            )
+
+        if not user.is_active:
+            refresh_token.revoked = True
+
+            db.session.commit()
+
+            log_token_refresh(
+                user.username,
+                user.id,
+                success=False,
+                reason="Account deactivated",
+            )
+
+            return error_response(
+                "Your account has been deactivated.",
+                403,
+            )
+
+        # --------------------------------------------------
+        # Prevent refresh token reuse.
+        # --------------------------------------------------
 
         if refresh_token.revoked:
-            # Log attempt to reuse revoked token
-            log_revoked_token_reuse(user.username, user.id, ip_address, "refresh")
+
+            log_revoked_token_reuse(
+                user.username,
+                user.id,
+                ip_address,
+                "refresh",
+            )
+
             log_token_refresh(
                 user.username,
                 user.id,
                 success=False,
-                reason="Token already revoked"
+                reason="Token already revoked",
             )
-            return error_response("Refresh token has been revoked.", 401)
+
+            return error_response(
+                "Refresh token has been revoked.",
+                401,
+            )
+
+        # --------------------------------------------------
+        # Check expiration.
+        # --------------------------------------------------
 
         if refresh_token.expires_at <= datetime.utcnow():
+
             refresh_token.revoked = True
+
             db.session.commit()
+
             log_token_refresh(
                 user.username,
                 user.id,
                 success=False,
-                reason="Token expired"
+                reason="Token expired",
             )
-            return error_response("Refresh token has expired.", 401)
 
-        # Revoke old token and generate new one
+            return error_response(
+                "Refresh token has expired.",
+                401,
+            )
+
+        # --------------------------------------------------
+        # Rotate token.
+        # --------------------------------------------------
+
         refresh_token.revoked = True
-        response = token_response("Token refreshed successfully.", user)
+
+        response = token_response(
+            "Token refreshed successfully.",
+            user,
+        )
 
         db.session.commit()
 
-        # Log successful refresh
-        log_token_refresh(user.username, user.id, success=True)
+        log_token_refresh(
+            user.username,
+            user.id,
+            success=True,
+        )
 
         return response, 200
 
 
+# ==========================================================
+# Logout
+# ==========================================================
+
 @auth_ns.route("/logout")
 class Logout(Resource):
-    @auth_ns.expect(logout_request_model, validate=False)
-    @auth_ns.response(200, "Logout successful.", message_response_model)
-    @auth_ns.response(400, "Refresh token is required.", message_response_model)
-    @auth_ns.response(401, "Invalid refresh token.", message_response_model)
+    @auth_ns.expect(
+        logout_request_model,
+        validate=False,
+    )
+    @auth_ns.response(
+        200,
+        "Logout successful.",
+        message_response_model,
+    )
+    @auth_ns.response(
+        400,
+        "Refresh token is required.",
+        message_response_model,
+    )
+    @auth_ns.response(
+        401,
+        "Invalid refresh token.",
+        message_response_model,
+    )
     def post(self):
-        data = request.get_json(silent=True) or {}
-        raw_token = data.get("refresh_token", "").strip()
+        """
+        Revoke the supplied refresh token.
+        """
+
+        data = request.get_json(
+            silent=True
+        ) or {}
+
+        raw_token = str(
+            data.get(
+                "refresh_token",
+                ""
+            )
+        ).strip()
+
         ip_address = request.remote_addr
 
         if not raw_token:
-            return error_response("Refresh token is required.", 400)
+            return error_response(
+                "Refresh token is required.",
+                400,
+            )
 
-        refresh_token = get_refresh_token(raw_token)
+        refresh_token = get_refresh_token(
+            raw_token
+        )
 
         if not refresh_token:
-            return error_response("Invalid refresh token.", 401)
+            return error_response(
+                "Invalid refresh token.",
+                401,
+            )
 
-        user = User.query.get(refresh_token.user_id)
-        username = user.username if user else "unknown"
+        user = db.session.get(
+            User,
+            refresh_token.user_id
+        )
+
+        username = (
+            user.username
+            if user
+            else "unknown"
+        )
 
         refresh_token.revoked = True
+
         db.session.commit()
 
-        # Log logout
         if user:
-            log_logout(username, user.id, ip_address)
+            log_logout(
+                username,
+                user.id,
+                ip_address,
+            )
 
-        return {"message": "Logout successful."}, 200
+        return {
+            "message": "Logout successful."
+        }, 200
 
+
+# ==========================================================
+# Current User
+# ==========================================================
 
 @auth_ns.route("/me")
 class CurrentUser(Resource):
-    @role_required("Administrator", "Editor", "Viewer")
-    @auth_ns.response(200, "Current authenticated user.", auth_user_model)
-    @auth_ns.response(401, "Missing or invalid Authorization header.", message_response_model)
-    @auth_ns.response(403, "Forbidden.", message_response_model)
-    @auth_ns.response(404, "User not found.", message_response_model)
+
+    @role_required(
+        "user",
+        "upload_user",
+        "admin",
+    )
+    @auth_ns.response(
+        200,
+        "Current authenticated user.",
+        auth_user_model,
+    )
+    @auth_ns.response(
+        401,
+        "Missing or invalid Authorization header.",
+        message_response_model,
+    )
+    @auth_ns.response(
+        403,
+        "Account is not verified, inactive, or unauthorized.",
+        message_response_model,
+    )
+    @auth_ns.response(
+        404,
+        "User not found.",
+        message_response_model,
+    )
     def get(self):
+        """
+        Return information about the current authenticated user.
+        """
+
         user = get_authenticated_user()
 
         if not user:
-            return error_response("User not found.", 404)
+            return error_response(
+                "User not found.",
+                404,
+            )
 
-        return user_to_dict(user), 200
+        return user_to_dict(
+            user
+        ), 200
 
+
+# ==========================================================
+# Revoke All Refresh Tokens
+# ==========================================================
 
 @auth_ns.route("/revoke-all")
 class RevokeAllTokens(Resource):
-    @role_required("Administrator", "Editor", "Viewer")
-    @auth_ns.response(200, "All tokens revoked successfully.", message_response_model)
-    @auth_ns.response(401, "Missing or invalid Authorization header.", message_response_model)
-    @auth_ns.response(403, "Forbidden.", message_response_model)
-    @auth_ns.response(404, "User not found.", message_response_model)
+
+    @role_required(
+        "user",
+        "upload_user",
+        "admin",
+    )
+    @auth_ns.response(
+        200,
+        "All tokens revoked successfully.",
+        message_response_model,
+    )
+    @auth_ns.response(
+        401,
+        "Missing or invalid Authorization header.",
+        message_response_model,
+    )
+    @auth_ns.response(
+        403,
+        "Forbidden.",
+        message_response_model,
+    )
+    @auth_ns.response(
+        404,
+        "User not found.",
+        message_response_model,
+    )
     @auth_ns.doc(
-        description="Revoke all refresh tokens for the authenticated user. "
-                    "Useful for logging out from all devices after a security incident."
+        description=(
+            "Revoke all refresh tokens for the authenticated user. "
+            "This can be used to sign the user out from all devices."
+        )
     )
     def post(self):
-        """Revoke all refresh tokens for the authenticated user."""
+        """
+        Revoke all refresh tokens belonging to the current user.
+        """
+
         user = get_authenticated_user()
 
         if not user:
-            return error_response("User not found.", 404)
-
-        # Revoke all refresh tokens for this user
-        try:
-            RefreshToken.query.filter_by(user_id=user.id).update({"revoked": True})
-            db.session.commit()
-            
-            current_app.logger.info(
-                f"All refresh tokens revoked for user {user.id} ({user.username})"
+            return error_response(
+                "User not found.",
+                404,
             )
-            
+
+        try:
+
+            RefreshToken.query.filter_by(
+                user_id=user.id
+            ).update(
+                {
+                    "revoked": True
+                }
+            )
+
+            db.session.commit()
+
+            current_app.logger.info(
+                "All refresh tokens revoked for user %s (%s).",
+                user.id,
+                user.username,
+            )
+
             return {
-                "message": "All tokens revoked successfully. Please log in again from all devices."
+                "message": (
+                    "All tokens revoked successfully. "
+                    "Please log in again from all devices."
+                )
             }, 200
+
         except Exception as error:
+
             db.session.rollback()
-            current_app.logger.exception(error)
-            return error_response("Failed to revoke tokens.", 500)
+
+            current_app.logger.exception(
+                "Failed to revoke all tokens for user %s: %s",
+                user.id,
+                error,
+            )
+
+            return error_response(
+                "Failed to revoke tokens.",
+                500,
+            )
 
 
-api.add_namespace(auth_ns, path="/auth")
+# ==========================================================
+# Register Authentication Namespace
+# ==========================================================
+
+api.add_namespace(
+    auth_ns,
+    path="/auth"
+)
