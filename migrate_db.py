@@ -1,97 +1,275 @@
 """
-Database migration script to add new columns for security hardening.
+Database migration script.
 
-This script adds the required columns to the users table for tracking
-login attempts without breaking existing data.
+Adds the authentication and security columns required by
+the current User model without deleting existing data.
 """
 
-import os
-from dotenv import load_dotenv
-from sqlalchemy import text, inspect
-
-load_dotenv()
-
-from app import app, db
+from pathlib import Path
+import sqlite3
 
 
-def add_column_if_not_exists(connection, table_name, column_name, column_definition):
-    """
-    Add a column to a table if it doesn't already exist.
-    
-    Args:
-        connection: SQLAlchemy connection object
-        table_name: Name of the table
-        column_name: Name of the column to add
-        column_definition: SQL definition of the column (e.g., "DATETIME NULL DEFAULT NULL")
-    """
-    inspector = inspect(connection)
-    columns = [c['name'] for c in inspector.get_columns(table_name)]
-    
-    if column_name not in columns:
-        print(f"Adding column '{column_name}' to table '{table_name}'...")
-        try:
-            alter_sql = f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}"
-            connection.execute(text(alter_sql))
-            connection.commit()
-            print(f"✓ Successfully added column '{column_name}'")
-            return True
-        except Exception as e:
-            print(f"✗ Error adding column '{column_name}': {e}")
-            return False
-    else:
-        print(f"✓ Column '{column_name}' already exists, skipping...")
-        return True
+# ==========================================================
+# Database Location
+# ==========================================================
 
+BASE_DIR = Path(__file__).resolve().parent
+
+DATABASE_PATH = BASE_DIR / "verbal_autopsy.db"
+
+
+# ==========================================================
+# Migration
+# ==========================================================
 
 def migrate_database():
-    """Apply database migrations to add new security tracking columns."""
-    
-    print("=" * 60)
-    print("Database Migration: Add Security Hardening Columns")
-    print("=" * 60)
-    
-    with app.app_context():
-        try:
-            # Get a connection to the database
-            connection = db.engine.connect()
-            
-            print("\nAdding new columns to 'users' table...")
-            
-            # Add login tracking columns
-            add_column_if_not_exists(
-                connection,
-                "users",
-                "last_login_at",
-                "DATETIME NULL DEFAULT NULL"
-            )
-            
-            add_column_if_not_exists(
-                connection,
-                "users",
-                "failed_login_attempts",
-                "INTEGER DEFAULT 0"
-            )
-            
-            add_column_if_not_exists(
-                connection,
-                "users",
-                "last_failed_login_at",
-                "DATETIME NULL DEFAULT NULL"
-            )
-            
-            connection.close()
-            
-            print("\n" + "=" * 60)
-            print("✓ Migration completed successfully!")
-            print("=" * 60)
-            return True
-            
-        except Exception as e:
-            print(f"\n✗ Migration failed: {e}")
-            print("=" * 60)
-            return False
 
+    print("=" * 60)
+    print("VERBAL AUTOPSY DATABASE MIGRATION")
+    print("=" * 60)
+
+    print()
+    print(f"Database: {DATABASE_PATH}")
+
+    if not DATABASE_PATH.exists():
+
+        print()
+        print("ERROR: Database file was not found.")
+
+        return False
+
+    connection = None
+
+    try:
+
+        connection = sqlite3.connect(
+            DATABASE_PATH
+        )
+
+        cursor = connection.cursor()
+
+        # --------------------------------------------------
+        # Get existing columns
+        # --------------------------------------------------
+
+        cursor.execute(
+            "PRAGMA table_info(users)"
+        )
+
+        existing_columns = {
+            row[1]
+            for row in cursor.fetchall()
+        }
+
+        print()
+        print("Checking users table...")
+
+        # --------------------------------------------------
+        # is_verified
+        # --------------------------------------------------
+
+        if "is_verified" not in existing_columns:
+
+            print(
+                "Adding column: is_verified"
+            )
+
+            cursor.execute(
+                """
+                ALTER TABLE users
+                ADD COLUMN is_verified
+                BOOLEAN DEFAULT 0
+                """
+            )
+
+            print(
+                "✓ is_verified added."
+            )
+
+        else:
+
+            print(
+                "✓ is_verified already exists."
+            )
+
+        # --------------------------------------------------
+        # is_active
+        # --------------------------------------------------
+
+        if "is_active" not in existing_columns:
+
+            print(
+                "Adding column: is_active"
+            )
+
+            cursor.execute(
+                """
+                ALTER TABLE users
+                ADD COLUMN is_active
+                BOOLEAN DEFAULT 1
+                """
+            )
+
+            print(
+                "✓ is_active added."
+            )
+
+        else:
+
+            print(
+                "✓ is_active already exists."
+            )
+
+        # --------------------------------------------------
+        # last_login_at
+        # --------------------------------------------------
+
+        if "last_login_at" not in existing_columns:
+
+            print(
+                "Adding column: last_login_at"
+            )
+
+            cursor.execute(
+                """
+                ALTER TABLE users
+                ADD COLUMN last_login_at
+                DATETIME
+                """
+            )
+
+            print(
+                "✓ last_login_at added."
+            )
+
+        else:
+
+            print(
+                "✓ last_login_at already exists."
+            )
+
+        # --------------------------------------------------
+        # failed_login_attempts
+        # --------------------------------------------------
+
+        if "failed_login_attempts" not in existing_columns:
+
+            print(
+                "Adding column: failed_login_attempts"
+            )
+
+            cursor.execute(
+                """
+                ALTER TABLE users
+                ADD COLUMN failed_login_attempts
+                INTEGER DEFAULT 0
+                """
+            )
+
+            print(
+                "✓ failed_login_attempts added."
+            )
+
+        else:
+
+            print(
+                "✓ failed_login_attempts already exists."
+            )
+
+        # --------------------------------------------------
+        # last_failed_login_at
+        # --------------------------------------------------
+
+        if "last_failed_login_at" not in existing_columns:
+
+            print(
+                "Adding column: last_failed_login_at"
+            )
+
+            cursor.execute(
+                """
+                ALTER TABLE users
+                ADD COLUMN last_failed_login_at
+                DATETIME
+                """
+            )
+
+            print(
+                "✓ last_failed_login_at added."
+            )
+
+        else:
+
+            print(
+                "✓ last_failed_login_at already exists."
+            )
+
+        # --------------------------------------------------
+        # Existing accounts
+        # --------------------------------------------------
+        #
+        # Existing users remain active.
+        #
+        # They are NOT automatically verified because
+        # verification is supposed to be controlled by
+        # the administrator.
+        #
+        # --------------------------------------------------
+
+        if "is_active" not in existing_columns:
+
+            cursor.execute(
+                """
+                UPDATE users
+                SET is_active = 1
+                WHERE is_active IS NULL
+                """
+            )
+
+        # --------------------------------------------------
+        # Save changes
+        # --------------------------------------------------
+
+        connection.commit()
+
+        print()
+        print("=" * 60)
+        print("DATABASE MIGRATION COMPLETED SUCCESSFULLY")
+        print("=" * 60)
+
+        return True
+
+    except Exception as error:
+
+        if connection:
+
+            connection.rollback()
+
+        print()
+        print("=" * 60)
+        print("DATABASE MIGRATION FAILED")
+        print("=" * 60)
+
+        print()
+        print(f"Error: {error}")
+
+        return False
+
+    finally:
+
+        if connection:
+
+            connection.close()
+
+
+# ==========================================================
+# Run
+# ==========================================================
 
 if __name__ == "__main__":
+
     success = migrate_database()
-    exit(0 if success else 1)
+
+    if not success:
+
+        raise SystemExit(1)
