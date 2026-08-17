@@ -169,3 +169,17 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 {% endblock %}
+<div class="text-center mt-3">
+
+    <span class="text-muted">
+        Don't have an account?
+    </span>
+
+    <a
+        href="{{ url_for('auth.register') }}"
+        class="text-decoration-none"
+    >
+        Register
+    </a>
+
+</div>
