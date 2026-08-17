@@ -1,25 +1,29 @@
 from functools import wraps
 
-from flask import g, current_app, request
+from flask import current_app, g, request
 from flask_login import current_user
 
-from flask_jwt_extended.exceptions import (
-    JWTExtendedException,
-    NoAuthorizationError,
-)
 from flask_jwt_extended import (
     get_jwt_identity,
     verify_jwt_in_request,
 )
+from flask_jwt_extended.exceptions import (
+    JWTExtendedException,
+    NoAuthorizationError,
+)
 from jwt import ExpiredSignatureError, PyJWTError
 
+from api.auth_security import (
+    log_forbidden_access,
+    log_unauthorized_access,
+)
 from extensions import db
 from models import User
-from api.auth_security import (
-    log_unauthorized_access,
-    log_forbidden_access,
-)
 
+
+# ==========================================================
+# Standard Authorization Response
+# ==========================================================
 
 def authorization_response(message, status_code):
     return {
@@ -27,24 +31,28 @@ def authorization_response(message, status_code):
     }, status_code
 
 
+# ==========================================================
+# JWT User Lookup
+# ==========================================================
+
 def get_authenticated_user():
     """
-    Return the current database user for a verified JWT identity.
+    Retrieve the database User associated with the JWT identity.
 
-    The JWT identity contains the user's database ID.
-    The user is retrieved from the database on every request
-    so that role changes take effect immediately.
+    The user's record is loaded from the database on every request.
+    This is intentional because role, verification, and account
+    status changes should take effect immediately.
     """
 
     identity = get_jwt_identity()
 
     try:
         user_id = int(identity)
-
     except (TypeError, ValueError):
 
         current_app.logger.warning(
-            f"Invalid JWT identity format: {identity}"
+            "Invalid JWT identity format: %s",
+            identity
         )
 
         return None
@@ -54,10 +62,11 @@ def get_authenticated_user():
         user_id
     )
 
-    if not user:
+    if user is None:
 
         current_app.logger.warning(
-            f"User not found for JWT identity: {user_id}"
+            "No user found for JWT identity: %s",
+            user_id
         )
 
         return None
@@ -65,47 +74,54 @@ def get_authenticated_user():
     return user
 
 
+# ==========================================================
+# Flask-Login Session User Lookup
+# ==========================================================
+
 def get_session_user():
     """
-    Return the currently authenticated Flask-Login user.
+    Retrieve the current Flask-Login user from the database.
 
-    This allows users who are already logged into the web dashboard
-    to access protected API endpoints without requiring a separate
-    JWT token in the browser.
+    The database record is fetched again so that changes to:
+        - role
+        - verification
+        - active status
 
-    JWT authentication is still supported for API clients and Swagger.
+    take effect immediately.
     """
 
-    if current_user.is_authenticated:
+    if not current_user.is_authenticated:
+        return None
 
-        user_id = getattr(
-            current_user,
-            "id",
-            None
-        )
+    user_id = getattr(
+        current_user,
+        "id",
+        None
+    )
 
-        if user_id is None:
-            return None
+    if user_id is None:
+        return None
 
-        user = db.session.get(
-            User,
-            user_id
-        )
-
-        return user
-
-    return None
+    return db.session.get(
+        User,
+        user_id
+    )
 
 
-def check_user_role(
+# ==========================================================
+# Account Verification / Status Check
+# ==========================================================
+
+def check_account_status(
     user,
-    allowed_role_set,
     endpoint,
     ip_address
 ):
     """
-    Check whether the authenticated user has permission
-    to access the requested resource.
+    Verify that an authenticated account has been approved
+    and is still active.
+
+    This is separate from role authorization.
     """
 
     if user is None:
@@ -121,52 +137,179 @@ def check_user_role(
             401
         )
 
+    # ------------------------------------------------------
+    # Account must be verified by an administrator
+    # ------------------------------------------------------
+
+    if not user.is_verified:
+
+        current_app.logger.warning(
+            "Unverified user %s attempted to access %s",
+            user.id,
+            endpoint
+        )
+
+        return authorization_response(
+            "Your account has not been verified by an administrator.",
+            403
+        )
+
+    # ------------------------------------------------------
+    # Account must still be active
+    # ------------------------------------------------------
+
+    if not user.is_active:
+
+        current_app.logger.warning(
+            "Inactive user %s attempted to access %s",
+            user.id,
+            endpoint
+        )
+
+        return authorization_response(
+            "Your account has been deactivated.",
+            403
+        )
+
+    # Make the current database user available to the request.
     g.current_user = user
 
-    if user.role not in allowed_role_set:
+    return None
+
+
+# ==========================================================
+# Role Check
+# ==========================================================
+
+def check_user_role(
+    user,
+    allowed_role_set,
+    endpoint,
+    ip_address
+):
+    """
+    Verify:
+        1. The user exists.
+        2. The user is verified.
+        3. The user is active.
+        4. The user has one of the required roles.
+    """
+
+    account_error = check_account_status(
+        user,
+        endpoint,
+        ip_address
+    )
+
+    if account_error:
+        return account_error
+
+    # ------------------------------------------------------
+    # Role normalization
+    # ------------------------------------------------------
+
+    role = (user.role or "").strip().lower()
+
+    # ------------------------------------------------------
+    # Backward compatibility with the old project roles.
+    #
+    # Old role -> New role
+    #
+    # Administrator -> admin
+    # Editor        -> upload_user
+    # Viewer        -> user
+    #
+    # This lets the API continue working safely while the
+    # database is being migrated.
+    # ------------------------------------------------------
+
+    legacy_role_map = {
+        "administrator": "admin",
+        "editor": "upload_user",
+        "viewer": "user",
+    }
+
+    normalized_role = legacy_role_map.get(
+        role,
+        role
+    )
+
+    normalized_allowed_roles = {
+        legacy_role_map.get(
+            str(allowed_role).strip().lower(),
+            str(allowed_role).strip().lower()
+        )
+        for allowed_role in allowed_role_set
+    }
+
+    # ------------------------------------------------------
+    # Enforce role
+    # ------------------------------------------------------
+
+    if normalized_role not in normalized_allowed_roles:
 
         log_forbidden_access(
             endpoint,
             user.username,
             user.id,
             ",".join(
-                sorted(allowed_role_set)
+                sorted(normalized_allowed_roles)
             ),
-            user.role,
+            normalized_role,
             ip_address
         )
 
         current_app.logger.warning(
-            f"Permission denied: user {user.id} "
-            f"({user.role}) attempted to access "
-            f"resource requiring {allowed_role_set}"
+            "Permission denied: user %s (%s) attempted "
+            "to access %s requiring roles %s",
+            user.id,
+            normalized_role,
+            endpoint,
+            normalized_allowed_roles
         )
 
         return authorization_response(
-            "Forbidden.",
+            "You do not have permission to perform this action.",
             403
         )
+
+    # ------------------------------------------------------
+    # Expose normalized role to the request.
+    #
+    # This can be useful to other parts of the application.
+    # ------------------------------------------------------
+
+    g.current_user_role = normalized_role
 
     return None
 
 
+# ==========================================================
+# Role Required Decorator
+# ==========================================================
+
 def role_required(*allowed_roles):
     """
-    Require an authenticated user with one of the allowed roles.
+    Protect a route/resource using authentication,
+    account verification, account status, and role checks.
+
+    Example:
+
+        @role_required("user", "upload_user", "admin")
+
+    A user must:
+        - be authenticated
+        - have a verified account
+        - have an active account
+        - possess one of the allowed roles
 
     Authentication methods supported:
 
-    1. Flask-Login session
-       Used by the web dashboard.
+        1. Flask-Login session
+           Used by the web dashboard.
 
-    2. JWT Bearer token
-       Used by Swagger and external API clients.
-
-    The Flask-Login session is checked first because dashboard
-    users are already authenticated through the normal web login.
-
-    JWT authentication remains available when no Flask-Login
-    session exists.
+        2. JWT Bearer token
+           Used by Swagger and external API clients.
     """
 
     if not allowed_roles:
@@ -188,7 +331,7 @@ def role_required(*allowed_roles):
             endpoint = request.endpoint or "unknown"
 
             # ==================================================
-            # 1. Try the normal Flask-Login dashboard session
+            # 1. Try Flask-Login session authentication
             # ==================================================
 
             session_user = get_session_user()
@@ -203,7 +346,6 @@ def role_required(*allowed_roles):
                 )
 
                 if authorization_error:
-
                     return authorization_error
 
                 return function(
@@ -213,7 +355,8 @@ def role_required(*allowed_roles):
 
             # ==================================================
             # 2. No Flask-Login session.
-            #    Try JWT authentication for API clients.
+            #
+            #    Try JWT authentication for Swagger/API clients.
             # ==================================================
 
             try:
@@ -247,13 +390,18 @@ def role_required(*allowed_roles):
                 PyJWTError
             ):
 
+                current_app.logger.warning(
+                    "Invalid JWT attempted on endpoint %s",
+                    endpoint
+                )
+
                 return authorization_response(
                     "Invalid authorization token.",
                     401
                 )
 
             # ==================================================
-            # 3. Retrieve the user associated with the JWT
+            # 3. Retrieve JWT-associated database user
             # ==================================================
 
             jwt_user = get_authenticated_user()
@@ -266,7 +414,6 @@ def role_required(*allowed_roles):
             )
 
             if authorization_error:
-
                 return authorization_error
 
             return function(
