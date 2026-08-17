@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+
+{% block title %}
+Administrator - User Management
+{% endblock %}
+
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- Header -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold mb-1">
+
+                <i class="bi bi-shield-lock"></i>
+
+                User Management
+
+            </h2>
+
+            <p class="text-muted mb-0">
+
+                Approve users, manage roles and control account access.
+
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- Statistics -->
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-body">
+
+                    <small class="text-muted">
+                        Total Users
+                    </small>
+
+                    <h3 class="fw-bold mb-0">
+                        {{ users|length }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-body">
+
+                    <small class="text-muted">
+                        Pending Approval
+                    </small>
+
+                    <h3 class="fw-bold mb-0">
+
+                        {{ users|selectattr("is_verified", "equalto", false)|list|length }}
+
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- User Table -->
+
+    <div class="card shadow-sm border-0">
+
+        <div class="card-header bg-white">
+
+            <h5 class="mb-0">
+
+                Registered Users
+
+            </h5>
+
+        </div>
+
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Username
+                            </th>
+
+                            <th>
+                                Email
+                            </th>
+
+                            <th>
+                                Role
+                            </th>
+
+                            <th>
+                                Verification
+                            </th>
+
+                            <th>
+                                Account Status
+                            </th>
+
+                            <th>
+                                Created
+                            </th>
+
+                            <th class="text-end">
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for user in users %}
+
+                        <tr>
+
+                            <!-- Username -->
+
+                            <td>
+
+                                <strong>
+                                    {{ user.username }}
+                                </strong>
+
+                                {% if user.id == current_user.id %}
+
+                                    <span class="badge bg-primary ms-1">
+                                        You
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Email -->
+
+                            <td>
+                                {{ user.email }}
+                            </td>
+
+
+                            <!-- Role -->
+
+                            <td>
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for('dashboard.change_user_role', user_id=user.id) }}"
+                                    class="d-flex gap-2"
+                                >
+
+                                    <select
+                                        name="role"
+                                        class="form-select form-select-sm"
+                                        {% if user.id == current_user.id %}disabled{% endif %}
+                                    >
+
+                                        <option
+                                            value="user"
+                                            {% if user.role == "user" %}selected{% endif %}
+                                        >
+                                            User
+                                        </option>
+
+                                        <option
+                                            value="upload_user"
+                                            {% if user.role == "upload_user" %}selected{% endif %}
+                                        >
+                                            Upload User
+                                        </option>
+
+                                        <option
+                                            value="admin"
+                                            {% if user.role == "admin" %}selected{% endif %}
+                                        >
+                                            Admin
+                                        </option>
+
+                                    </select>
+
+                                    {% if user.id != current_user.id %}
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-sm btn-outline-primary"
+                                        title="Change role"
+                                    >
+
+                                        <i class="bi bi-check"></i>
+
+                                    </button>
+
+                                    {% endif %}
+
+                                </form>
+
+                            </td>
+
+
+                            <!-- Verification -->
+
+                            <td>
+
+                                {% if user.is_verified %}
+
+                                    <span class="badge bg-success">
+
+                                        <i class="bi bi-check-circle"></i>
+
+                                        Approved
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-warning text-dark">
+
+                                        <i class="bi bi-clock"></i>
+
+                                        Pending
+
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Account Status -->
+
+                            <td>
+
+                                {% if user.is_active %}
+
+                                    <span class="badge bg-success">
+                                        Active
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-danger">
+                                        Deactivated
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Created -->
+
+                            <td>
+
+                                {% if user.created_at %}
+
+                                    {{ user.created_at.strftime("%Y-%m-%d") }}
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <!-- Actions -->
+
+                            <td class="text-end">
+
+                                <div class="d-flex justify-content-end gap-2">
+
+
+                                    <!-- Approve -->
+
+                                    {% if not user.is_verified %}
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('dashboard.approve_user', user_id=user.id) }}"
+                                    >
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-success"
+                                            title="Approve user"
+                                        >
+
+                                            <i class="bi bi-check-circle"></i>
+
+                                            Approve
+
+                                        </button>
+
+                                    </form>
+
+                                    {% endif %}
+
+
+                                    <!-- Activate / Deactivate -->
+
+                                    {% if user.id != current_user.id %}
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('dashboard.toggle_user_active', user_id=user.id) }}"
+                                    >
+
+                                        {% if user.is_active %}
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-outline-danger"
+                                            title="Deactivate user"
+                                        >
+
+                                            <i class="bi bi-person-x"></i>
+
+                                            Deactivate
+
+                                        </button>
+
+                                        {% else %}
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-outline-success"
+                                            title="Activate user"
+                                        >
+
+                                            <i class="bi bi-person-check"></i>
+
+                                            Activate
+
+                                        </button>
+
+                                        {% endif %}
+
+                                    </form>
+
+                                    {% endif %}
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+
+                            <td
+                                colspan="7"
+                                class="text-center py-5 text-muted"
+                            >
+
+                                <i class="bi bi-people fs-1"></i>
+
+                                <p class="mt-2 mb-0">
+                                    No users have been registered yet.
+                                </p>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
