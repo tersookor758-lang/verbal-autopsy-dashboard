@@ -28,14 +28,22 @@ LGAS_FILE = BASE_DIR / "resources" / "raw" / "lgas.json"
 def load_states():
     """Load the Nigerian states list."""
 
-    with open(STATES_FILE, "r", encoding="utf-8") as file:
+    with open(
+        STATES_FILE,
+        "r",
+        encoding="utf-8",
+    ) as file:
         return json.load(file)
 
 
 def load_lgas():
     """Load the state-to-LGA mapping."""
 
-    with open(LGAS_FILE, "r", encoding="utf-8") as file:
+    with open(
+        LGAS_FILE,
+        "r",
+        encoding="utf-8",
+    ) as file:
         return json.load(file)
 
 
@@ -57,16 +65,25 @@ api.add_namespace(
 @verbal_autopsy_ns.route("/locations")
 class Locations(Resource):
 
-    # All authenticated users can use location filters.
-    @role_required("admin", "upload_user", "user")
+    @role_required(
+        "admin",
+        "upload_user",
+        "user",
+    )
     def get(self):
 
-        state = request.args.get("state", "").strip()
+        state = request.args.get(
+            "state",
+            "",
+        ).strip()
 
         if state:
             return {
                 "state": state,
-                "lgas": load_lgas().get(state, []),
+                "lgas": load_lgas().get(
+                    state,
+                    [],
+                ),
             }, 200
 
         return {
@@ -81,12 +98,23 @@ class Locations(Resource):
 @verbal_autopsy_ns.route("/")
 class VerbalAutopsyList(Resource):
 
-    # All authenticated users can view records.
-    @role_required("admin", "upload_user", "user")
-    @verbal_autopsy_ns.marshal_list_with(verbal_autopsy_model)
+    @role_required(
+        "admin",
+        "upload_user",
+        "user",
+    )
+    @verbal_autopsy_ns.marshal_list_with(
+        verbal_autopsy_model
+    )
     def get(self):
 
-        records = VerbalAutopsy.query.all()
+        records = (
+            VerbalAutopsy.query
+            .order_by(
+                VerbalAutopsy.id
+            )
+            .all()
+        )
 
         return [
             record.to_dict()
@@ -98,17 +126,32 @@ class VerbalAutopsyList(Resource):
 # Single Record Operations
 # ==========================================================
 
-@verbal_autopsy_ns.route("/<string:patientid>")
+@verbal_autopsy_ns.route(
+    "/<string:patientid>"
+)
 class VerbalAutopsyDetail(Resource):
 
-    # All authenticated users can view a record.
-    @role_required("admin", "upload_user", "user")
-    @verbal_autopsy_ns.marshal_with(verbal_autopsy_model)
+    # ------------------------------------------------------
+    # View Record
+    # ------------------------------------------------------
+
+    @role_required(
+        "admin",
+        "upload_user",
+        "user",
+    )
+    @verbal_autopsy_ns.marshal_with(
+        verbal_autopsy_model
+    )
     def get(self, patientid):
 
-        record = VerbalAutopsy.query.filter_by(
-            patientid=patientid
-        ).first()
+        record = (
+            VerbalAutopsy.query
+            .filter_by(
+                patientid=patientid
+            )
+            .first()
+        )
 
         if not record:
             return {
@@ -117,15 +160,26 @@ class VerbalAutopsyDetail(Resource):
 
         return record.to_dict(), 200
 
-    # Only administrators can edit records.
+    # ------------------------------------------------------
+    # Edit Record
+    # ------------------------------------------------------
+
     @role_required("admin")
-    @verbal_autopsy_ns.expect(verbal_autopsy_model)
-    @verbal_autopsy_ns.marshal_with(verbal_autopsy_model)
+    @verbal_autopsy_ns.expect(
+        verbal_autopsy_model
+    )
+    @verbal_autopsy_ns.marshal_with(
+        verbal_autopsy_model
+    )
     def put(self, patientid):
 
-        record = VerbalAutopsy.query.filter_by(
-            patientid=patientid
-        ).first()
+        record = (
+            VerbalAutopsy.query
+            .filter_by(
+                patientid=patientid
+            )
+            .first()
+        )
 
         if not record:
             return {
@@ -155,7 +209,11 @@ class VerbalAutopsyDetail(Resource):
             for key, value in data.items():
 
                 if key in allowed_fields:
-                    setattr(record, key, value)
+                    setattr(
+                        record,
+                        key,
+                        value,
+                    )
 
             db.session.commit()
 
@@ -163,33 +221,61 @@ class VerbalAutopsyDetail(Resource):
 
             db.session.rollback()
 
-            current_app.logger.exception(error)
+            current_app.logger.exception(
+                error
+            )
 
             return {
-                "message": "Failed to update record"
+                "message":
+                    "Failed to update record"
             }, 500
 
         return record.to_dict(), 200
 
-    # Only administrators can delete records.
+    # ------------------------------------------------------
+    # Delete Record
+    # ------------------------------------------------------
+
     @role_required("admin")
     def delete(self, patientid):
 
-        record = VerbalAutopsy.query.filter_by(
-            patientid=patientid
-        ).first()
+        record = (
+            VerbalAutopsy.query
+            .filter_by(
+                patientid=patientid
+            )
+            .first()
+        )
 
         if not record:
             return {
                 "message": "Record not found"
             }, 404
 
-        db.session.delete(record)
-        db.session.commit()
+        try:
 
-        return {
-            "message": "Record deleted successfully"
-        }, 200
+            db.session.delete(record)
+
+            db.session.commit()
+
+            return {
+                "message":
+                    "Record deleted successfully",
+                "patientid": patientid,
+            }, 200
+
+        except Exception as error:
+
+            db.session.rollback()
+
+            current_app.logger.exception(
+                error
+            )
+
+            return {
+                "message":
+                    "Failed to delete record"
+            }, 500
 
 
 # ==========================================================
@@ -199,10 +285,13 @@ class VerbalAutopsyDetail(Resource):
 @verbal_autopsy_ns.route("/upload")
 class UploadRecords(Resource):
 
-    # Upload is available only to users granted the
-    # upload_user role and to administrators.
-    @role_required("admin", "upload_user")
-    @verbal_autopsy_ns.expect(upload_parser)
+    @role_required(
+        "admin",
+        "upload_user",
+    )
+    @verbal_autopsy_ns.expect(
+        upload_parser
+    )
     @verbal_autopsy_ns.response(
         200,
         "Upload completed successfully",
@@ -210,7 +299,9 @@ class UploadRecords(Resource):
     )
     def post(self):
 
-        uploaded_file = request.files.get("file")
+        uploaded_file = request.files.get(
+            "file"
+        )
 
         if not uploaded_file:
             return {
@@ -228,13 +319,17 @@ class UploadRecords(Resource):
             uploaded_file.filename or ""
         ).lower()
 
-        extension = "." + filename.split(".")[-1]
+        extension = (
+            "."
+            + filename.split(".")[-1]
+        )
 
         if extension not in allowed_extensions:
+
             return {
                 "message":
-                "Unsupported file format. "
-                "Upload CSV, Excel or JSON."
+                    "Unsupported file format. "
+                    "Upload CSV, Excel or JSON."
             }, 400
 
         try:
@@ -247,7 +342,7 @@ class UploadRecords(Resource):
 
             return {
                 "message":
-                "Upload completed successfully",
+                    "Upload completed successfully",
                 "summary": result,
             }, 200
 
@@ -263,12 +358,14 @@ class UploadRecords(Resource):
 
             db.session.rollback()
 
-            current_app.logger.exception(error)
+            current_app.logger.exception(
+                error
+            )
 
             return {
                 "message":
-                "Upload failed. "
-                "Please check your file and try again."
+                    "Upload failed. "
+                    "Please check your file and try again."
             }, 500
 
 
@@ -276,16 +373,20 @@ class UploadRecords(Resource):
 # Export
 # ==========================================================
 
-@verbal_autopsy_ns.route("/export/<string:file_type>")
+@verbal_autopsy_ns.route(
+    "/export/<string:file_type>"
+)
 class ExportRecords(Resource):
 
-    # All authenticated users can export records.
-    @role_required("admin", "upload_user", "user")
+    @role_required(
+        "admin",
+        "upload_user",
+        "user",
+    )
     def get(self, file_type):
 
         file_type = file_type.lower()
 
-        # Only these export formats are supported.
         download_names = {
             "csv": "verbal_autopsy.csv",
             "excel": "verbal_autopsy.xlsx",
@@ -302,18 +403,21 @@ class ExportRecords(Resource):
         }
 
         if file_type not in download_names:
+
             return {
                 "message":
-                "Unsupported export format. "
-                "Use csv, excel or json."
+                    "Unsupported export format. "
+                    "Use csv, excel or json."
             }, 400
 
         try:
 
             exported_file = export_records(
-                VerbalAutopsy.query.order_by(
+                VerbalAutopsy.query
+                .order_by(
                     VerbalAutopsy.id
-                ).all(),
+                )
+                .all(),
                 file_type,
             )
 
@@ -323,9 +427,24 @@ class ExportRecords(Resource):
                 "message": str(error)
             }, 400
 
+        except Exception as error:
+
+            current_app.logger.exception(
+                error
+            )
+
+            return {
+                "message":
+                    "Failed to export records."
+            }, 500
+
         return send_file(
             exported_file,
             as_attachment=True,
-            download_name=download_names[file_type],
-            mimetype=mime_types[file_type],
+            download_name=download_names[
+                file_type
+            ],
+            mimetype=mime_types[
+                file_type
+            ],
         )
