@@ -3,6 +3,16 @@ Application extensions.
 
 Extensions are created here and initialized in app.py
 to avoid circular imports.
+
+Includes:
+- SQLAlchemy
+- Flask-Migrate
+- Flask-Limiter
+- Security logging
+- Flask-Login
+- Flask-JWT-Extended
+- JWT error handlers
+- Flask-Login user loader
 """
 
 import logging
@@ -11,6 +21,7 @@ from flask import jsonify
 from flask_jwt_extended import JWTManager
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -20,6 +31,13 @@ from flask_limiter.util import get_remote_address
 # ==========================================================
 
 db = SQLAlchemy()
+
+
+# ==========================================================
+# Database Migrations
+# ==========================================================
+
+migrate = Migrate()
 
 
 # ==========================================================
@@ -60,6 +78,8 @@ if not security_logger.handlers:
     security_logger.addHandler(
         handler
     )
+
+security_logger.propagate = False
 
 
 # ==========================================================
@@ -209,5 +229,44 @@ def handle_non_fresh_jwt(
 
     return jwt_error_response(
         "A fresh authorization token is required.",
+        401,
+    )
+
+
+# ==========================================================
+# JWT User Lookup Error
+# ==========================================================
+
+@jwt.user_lookup_error_loader
+def handle_jwt_user_lookup_error(
+    jwt_header,
+    jwt_payload,
+):
+    """
+    Handle a JWT whose associated user cannot be found.
+    """
+
+    return jwt_error_response(
+        "The user associated with this authorization token "
+        "could not be found.",
+        401,
+    )
+
+
+# ==========================================================
+# JWT Token Verification Error
+# ==========================================================
+
+@jwt.token_verification_failed_loader
+def handle_jwt_token_verification_failed(
+    jwt_header,
+    jwt_payload,
+):
+    """
+    Handle failed JWT token verification.
+    """
+
+    return jwt_error_response(
+        "Authorization token verification failed.",
         401,
     )
