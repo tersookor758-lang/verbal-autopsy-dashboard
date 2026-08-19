@@ -4,25 +4,13 @@ Administrator Routes
 Handles:
 - Admin dashboard
 - User management
-- Approving new accounts
-- Activating accounts
-- Deactivating accounts
-- Changing user roles
-- Deleting user accounts
+- Account activation/deactivation
+- Role management
+- User deletion
 """
 
-from flask import (
-    flash,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
-
-from flask_login import (
-    current_user,
-    login_required,
-)
+from flask import flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 
 from admin import admin_bp
 from extensions import db
@@ -34,38 +22,19 @@ from models import User
 # ==========================================================
 
 def admin_required():
-    """
-    Ensure that the current user is an administrator.
-
-    Returns:
-        True when access is allowed.
-        Redirect response when access is denied.
-    """
+    """Allow access only to authenticated administrators."""
 
     if not current_user.is_authenticated:
+        return redirect(url_for("auth.login"))
 
-        return redirect(
-            url_for("auth.login")
-        )
+    role = (current_user.role or "").strip().lower()
 
-    role = (
-        current_user.role or ""
-    ).strip().lower()
-
-    if role not in {
-        "admin",
-        "administrator",
-    }:
-
+    if role not in {"admin", "administrator"}:
         flash(
-            "You do not have permission to access "
-            "the administrator area.",
+            "You do not have permission to access the administrator area.",
             "danger"
         )
-
-        return redirect(
-            url_for("dashboard.index")
-        )
+        return redirect(url_for("dashboard.index"))
 
     return True
 
@@ -77,24 +46,14 @@ def admin_required():
 @admin_bp.route("/")
 @login_required
 def index():
-    """
-    Display the administrator dashboard.
-    """
+    """Display administrator statistics and recent users."""
 
     access = admin_required()
 
     if access is not True:
         return access
 
-    # ------------------------------------------------------
-    # User Statistics
-    # ------------------------------------------------------
-
     total_users = User.query.count()
-
-    pending_users = User.query.filter(
-        User.is_verified.is_(False)
-    ).count()
 
     active_users = User.query.filter(
         User.is_active.is_(True)
@@ -105,10 +64,7 @@ def index():
     ).count()
 
     admin_users = User.query.filter(
-        User.role.in_([
-            "admin",
-            "administrator",
-        ])
+        User.role.in_(["admin", "administrator"])
     ).count()
 
     regular_users = User.query.filter(
@@ -119,15 +75,9 @@ def index():
         User.role == "upload_user"
     ).count()
 
-    # ------------------------------------------------------
-    # Recent Users
-    # ------------------------------------------------------
-
     recent_users = (
         User.query
-        .order_by(
-            User.created_at.desc()
-        )
+        .order_by(User.created_at.desc())
         .limit(5)
         .all()
     )
@@ -135,7 +85,6 @@ def index():
     return render_template(
         "admin/index.html",
         total_users=total_users,
-        pending_users=pending_users,
         active_users=active_users,
         inactive_users=inactive_users,
         admin_users=admin_users,
@@ -152,9 +101,7 @@ def index():
 @admin_bp.route("/users")
 @login_required
 def users():
-    """
-    Display all registered users.
-    """
+    """Display all registered users."""
 
     access = admin_required()
 
@@ -163,73 +110,13 @@ def users():
 
     users = (
         User.query
-        .order_by(
-            User.created_at.desc()
-        )
+        .order_by(User.created_at.desc())
         .all()
     )
-
-    pending_users = [
-        user
-        for user in users
-        if not user.is_verified
-        and user.role not in {
-            "admin",
-            "administrator",
-        }
-    ]
 
     return render_template(
         "admin/users.html",
         users=users,
-        pending_users=pending_users,
-    )
-
-
-# ==========================================================
-# Approve User
-# ==========================================================
-
-@admin_bp.route(
-    "/users/<int:user_id>/approve",
-    methods=["POST"],
-)
-@login_required
-def approve_user(user_id):
-
-    access = admin_required()
-
-    if access is not True:
-        return access
-
-    user = User.query.get_or_404(user_id)
-
-    if user.role in {
-        "admin",
-        "administrator",
-    }:
-
-        flash(
-            "Administrator accounts do not require approval.",
-            "info"
-        )
-
-        return redirect(
-            url_for("admin.users")
-        )
-
-    user.is_verified = True
-    user.is_active = True
-
-    db.session.commit()
-
-    flash(
-        f"User '{user.username}' has been approved.",
-        "success"
-    )
-
-    return redirect(
-        url_for("admin.users")
     )
 
 
@@ -243,6 +130,7 @@ def approve_user(user_id):
 )
 @login_required
 def activate_user(user_id):
+    """Reactivate a disabled user account."""
 
     access = admin_required()
 
@@ -260,9 +148,7 @@ def activate_user(user_id):
         "success"
     )
 
-    return redirect(
-        url_for("admin.users")
-    )
+    return redirect(url_for("admin.users"))
 
 
 # ==========================================================
@@ -275,6 +161,7 @@ def activate_user(user_id):
 )
 @login_required
 def deactivate_user(user_id):
+    """Disable a user without deleting their account."""
 
     access = admin_required()
 
@@ -283,16 +170,13 @@ def deactivate_user(user_id):
 
     user = User.query.get_or_404(user_id)
 
+    # Administrators cannot disable their own account.
     if user.id == current_user.id:
-
         flash(
             "You cannot deactivate your own account.",
             "danger"
         )
-
-        return redirect(
-            url_for("admin.users")
-        )
+        return redirect(url_for("admin.users"))
 
     user.is_active = False
 
@@ -303,9 +187,7 @@ def deactivate_user(user_id):
         "warning"
     )
 
-    return redirect(
-        url_for("admin.users")
-    )
+    return redirect(url_for("admin.users"))
 
 
 # ==========================================================
@@ -318,6 +200,12 @@ def deactivate_user(user_id):
 )
 @login_required
 def change_role(user_id):
+    """
+    Change a user's permission level.
+
+    Regular users can be promoted to upload users.
+    Upload users can be returned to regular users.
+    """
 
     access = admin_required()
 
@@ -338,44 +226,35 @@ def change_role(user_id):
     }
 
     if new_role not in allowed_roles:
-
         flash(
             "Invalid user role.",
             "danger"
         )
+        return redirect(url_for("admin.users"))
 
-        return redirect(
-            url_for("admin.users")
-        )
-
+    # Prevent an administrator from changing their own role.
     if user.id == current_user.id:
-
         flash(
             "You cannot change your own administrator role.",
             "danger"
         )
-
-        return redirect(
-            url_for("admin.users")
-        )
+        return redirect(url_for("admin.users"))
 
     user.role = new_role
 
+    # Admin accounts are automatically considered active.
     if new_role == "admin":
-
+        user.is_active = True
         user.is_verified = True
 
     db.session.commit()
 
     flash(
-        f"Role for '{user.username}' changed to "
-        f"'{new_role}'.",
+        f"Role for '{user.username}' changed to '{new_role}'.",
         "success"
     )
 
-    return redirect(
-        url_for("admin.users")
-    )
+    return redirect(url_for("admin.users"))
 
 
 # ==========================================================
@@ -388,6 +267,7 @@ def change_role(user_id):
 )
 @login_required
 def delete_user(user_id):
+    """Permanently delete a user account."""
 
     access = admin_required()
 
@@ -396,19 +276,15 @@ def delete_user(user_id):
 
     user = User.query.get_or_404(user_id)
 
+    # Administrators cannot delete their own account.
     if user.id == current_user.id:
-
         flash(
             "You cannot delete your own account.",
             "danger"
         )
-
-        return redirect(
-            url_for("admin.users")
-        )
+        return redirect(url_for("admin.users"))
 
     db.session.delete(user)
-
     db.session.commit()
 
     flash(
@@ -416,6 +292,4 @@ def delete_user(user_id):
         "success"
     )
 
-    return redirect(
-        url_for("admin.users")
-    )
+    return redirect(url_for("admin.users"))
