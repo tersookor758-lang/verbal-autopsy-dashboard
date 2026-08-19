@@ -6,6 +6,7 @@ to avoid circular imports.
 """
 
 import logging
+
 from flask import jsonify
 from flask_jwt_extended import JWTManager
 from flask_login import LoginManager
@@ -22,12 +23,12 @@ db = SQLAlchemy()
 
 
 # ==========================================================
-# Flask-Limiter (Rate Limiting)
+# Flask-Limiter
 # ==========================================================
 
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=[]
+    default_limits=[],
 )
 
 
@@ -35,17 +36,30 @@ limiter = Limiter(
 # Security Logger
 # ==========================================================
 
-security_logger = logging.getLogger("security")
-security_logger.setLevel(logging.INFO)
+security_logger = logging.getLogger(
+    "security"
+)
 
-# Ensure logger has a handler (won't duplicate if app already configured it)
+security_logger.setLevel(
+    logging.INFO
+)
+
 if not security_logger.handlers:
+
     handler = logging.StreamHandler()
+
     formatter = logging.Formatter(
-        '%(asctime)s - SECURITY - %(levelname)s - %(message)s'
+        "%(asctime)s - SECURITY - "
+        "%(levelname)s - %(message)s"
     )
-    handler.setFormatter(formatter)
-    security_logger.addHandler(handler)
+
+    handler.setFormatter(
+        formatter
+    )
+
+    security_logger.addHandler(
+        handler
+    )
 
 
 # ==========================================================
@@ -60,7 +74,9 @@ login_manager.login_message = (
     "Please log in to access this page."
 )
 
-login_manager.login_message_category = "warning"
+login_manager.login_message_category = (
+    "warning"
+)
 
 
 # ==========================================================
@@ -77,14 +93,14 @@ jwt = JWTManager()
 def jwt_error_response(
     message,
     status_code,
-    error=None
+    error=None,
 ):
     """
     Return a consistent JSON response for JWT errors.
     """
 
     response = {
-        "message": message
+        "message": message,
     }
 
     if error:
@@ -111,12 +127,12 @@ def load_user(user_id):
 
         return db.session.get(
             User,
-            int(user_id)
+            int(user_id),
         )
 
     except (
         TypeError,
-        ValueError
+        ValueError,
     ):
 
         return None
@@ -135,7 +151,7 @@ def handle_missing_jwt(error):
     return jwt_error_response(
         "Authorization header with a Bearer token is required.",
         401,
-        error
+        error,
     )
 
 
@@ -148,14 +164,14 @@ def handle_invalid_jwt(error):
     return jwt_error_response(
         "Invalid authorization token.",
         401,
-        error
+        error,
     )
 
 
 @jwt.expired_token_loader
 def handle_expired_jwt(
     jwt_header,
-    jwt_payload
+    jwt_payload,
 ):
     """
     Handle expired JWT access tokens.
@@ -163,14 +179,14 @@ def handle_expired_jwt(
 
     return jwt_error_response(
         "Authorization token has expired.",
-        401
+        401,
     )
 
 
 @jwt.revoked_token_loader
 def handle_revoked_jwt(
     jwt_header,
-    jwt_payload
+    jwt_payload,
 ):
     """
     Handle revoked JWT access tokens.
@@ -178,14 +194,14 @@ def handle_revoked_jwt(
 
     return jwt_error_response(
         "Authorization token has been revoked.",
-        401
+        401,
     )
 
 
 @jwt.needs_fresh_token_loader
 def handle_non_fresh_jwt(
     jwt_header,
-    jwt_payload
+    jwt_payload,
 ):
     """
     Handle endpoints that require a fresh JWT.
@@ -193,5 +209,5 @@ def handle_non_fresh_jwt(
 
     return jwt_error_response(
         "A fresh authorization token is required.",
-        401
+        401,
     )
