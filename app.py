@@ -7,13 +7,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-from flask import Flask
+from flask import (
+    Flask,
+    jsonify,
+)
+
 from flask_cors import CORS
+from sqlalchemy import text
 
 from config import Config
 
 from extensions import (
     db,
+    migrate,
     login_manager,
     jwt,
     limiter,
@@ -137,6 +143,11 @@ def create_app():
         app
     )
 
+    migrate.init_app(
+        app,
+        db,
+    )
+
     login_manager.init_app(
         app
     )
@@ -148,8 +159,11 @@ def create_app():
     # ------------------------------------------------------
     # Flask-Limiter
     #
-    # Development uses in-memory storage.
-    # Production requires a persistent backend.
+    # Development:
+    #     In-memory storage is allowed.
+    #
+    # Production:
+    #     RATE_LIMIT_STORAGE_URI must be configured.
     # ------------------------------------------------------
 
     limiter_kwargs = {}
@@ -220,26 +234,72 @@ def create_app():
     )
 
     # ------------------------------------------------------
+    # Health Check
+    # ------------------------------------------------------
+    #
+    # Used by deployment platforms and monitoring systems.
+    #
+    # The database is checked as well, so a successful response
+    # means both Flask and the database connection are working.
+    # ------------------------------------------------------
+
+    @app.route(
+        "/health",
+        methods=["GET"],
+    )
+    def health_check():
+        """
+        Return application and database health status.
+        """
+
+        try:
+
+            db.session.execute(
+                text("SELECT 1")
+            )
+
+            return jsonify(
+                {
+                    "status": "healthy",
+                    "application": "Verbal Autopsy Outcome Dashboard",
+                    "database": "connected",
+                }
+            ), 200
+
+        except Exception:
+
+            db.session.rollback()
+
+            return jsonify(
+                {
+                    "status": "unhealthy",
+                    "application": "Verbal Autopsy Outcome Dashboard",
+                    "database": "unavailable",
+                }
+            ), 503
+
+    # ------------------------------------------------------
     # Database Initialization
     # ------------------------------------------------------
     #
-    # Keep this for the current development environment.
+    # Development only.
     #
-    # Production database schema should ultimately be managed
-    # using Flask-Migrate/Alembic.
+    # Production schema changes are handled by Flask-Migrate.
     # ------------------------------------------------------
 
     with app.app_context():
 
-        db.create_all()
+        if not Config.IS_PRODUCTION:
 
-        create_default_admin()
+            db.create_all()
+
+            create_default_admin()
 
     return app
 
 
 # ==========================================================
-# Create Application
+# Application Instance
 # ==========================================================
 
 app = create_app()
