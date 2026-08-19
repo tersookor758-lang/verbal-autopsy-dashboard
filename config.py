@@ -2,11 +2,12 @@
 Application configuration.
 
 Supports:
-- Local development with XAMPP/MySQL
-- Production deployment
+- Local development with SQLite/MySQL
+- Production deployment with MySQL
 - Environment-based secrets
 - Secure session configuration
 - File upload configuration
+- Persistent rate limiting
 """
 
 import os
@@ -33,7 +34,7 @@ class Config:
             "FLASK_ENV",
             "development",
         ),
-    ).lower()
+    ).strip().lower()
 
     IS_PRODUCTION = ENVIRONMENT == "production"
 
@@ -54,9 +55,9 @@ class Config:
         "JWT_SECRET_KEY"
     )
 
-    # These values are allowed only during local development.
-    # Production must provide real secrets through environment
-    # variables.
+    # Development-only fallback secrets.
+    #
+    # These are deliberately unavailable in production.
     if not SECRET_KEY and not IS_PRODUCTION:
         SECRET_KEY = (
             "development-only-secret-"
@@ -105,7 +106,7 @@ class Config:
         os.environ.get(
             "USE_MYSQL",
             "false",
-        ).lower()
+        ).strip().lower()
         == "true"
     )
 
@@ -114,13 +115,36 @@ class Config:
         "verbal_autopsy.db",
     )
 
-    if USE_MYSQL and DATABASE_URL:
+    # ----------------------------------------------------------
+    # Database URI selection
+    # ----------------------------------------------------------
 
-        DATABASE_URI = DATABASE_URL.replace(
-            "postgres://",
-            "postgresql://",
-            1,
-        )
+    if USE_MYSQL:
+
+        if not DATABASE_URL:
+            DATABASE_URI = None
+
+        else:
+
+            DATABASE_URI = DATABASE_URL.strip()
+
+            # Normalize common MySQL URL formats.
+            if DATABASE_URI.startswith(
+                "mysql://"
+            ):
+                DATABASE_URI = DATABASE_URI.replace(
+                    "mysql://",
+                    "mysql+pymysql://",
+                    1,
+                )
+
+            elif DATABASE_URI.startswith(
+                "mysql+pymysql://"
+            ):
+                pass
+
+            else:
+                DATABASE_URI = DATABASE_URI
 
     else:
 
@@ -186,19 +210,6 @@ class Config:
     # ==========================================================
     # RATE LIMITING
     # ==========================================================
-    #
-    # Development:
-    #     Uses Flask-Limiter's in-memory storage.
-    #
-    # Production:
-    #     RATE_LIMIT_STORAGE_URI must be supplied.
-    #
-    # Example:
-    #
-    # RATE_LIMIT_STORAGE_URI=redis://localhost:6379/0
-    #
-    # or a managed Redis URL supplied by the hosting provider.
-    # ==========================================================
 
     RATE_LIMIT_STORAGE_URI = os.environ.get(
         "RATE_LIMIT_STORAGE_URI"
@@ -212,9 +223,10 @@ class Config:
     CORS_ORIGINS = os.environ.get(
         "CORS_ORIGINS",
         "",
-    )
+    ).strip()
 
     if CORS_ORIGINS:
+
         CORS_ORIGINS = [
             origin.strip()
             for origin in CORS_ORIGINS.split(",")
@@ -222,11 +234,14 @@ class Config:
         ]
 
     else:
+
+        # Wildcard CORS is acceptable for local development,
+        # but production must explicitly define allowed origins.
         CORS_ORIGINS = "*"
 
 
     # ==========================================================
-    # VALIDATE PRODUCTION CONFIGURATION
+    # PRODUCTION VALIDATION
     # ==========================================================
 
     @classmethod
@@ -238,41 +253,86 @@ class Config:
         if not cls.IS_PRODUCTION:
             return
 
+
+        # ------------------------------------------------------
+        # Application secrets
+        # ------------------------------------------------------
+
         if not cls.SECRET_KEY:
+
             raise RuntimeError(
                 "SECRET_KEY must be set in production."
-            )
-
-        if not cls.JWT_SECRET_KEY:
-            raise RuntimeError(
-                "JWT_SECRET_KEY must be set in production."
             )
 
         if cls.SECRET_KEY.startswith(
             "development-only-secret-"
         ):
+
             raise RuntimeError(
-                "A real SECRET_KEY must be configured in production."
+                "A real SECRET_KEY must be configured "
+                "in production."
+            )
+
+
+        if not cls.JWT_SECRET_KEY:
+
+            raise RuntimeError(
+                "JWT_SECRET_KEY must be set in production."
             )
 
         if cls.JWT_SECRET_KEY.startswith(
             "development-only-jwt-secret-"
         ):
+
             raise RuntimeError(
-                "A real JWT_SECRET_KEY must be configured in production."
+                "A real JWT_SECRET_KEY must be configured "
+                "in production."
             )
 
+
+        # ------------------------------------------------------
+        # Database
+        # ------------------------------------------------------
+
         if not cls.DATABASE_URL:
+
             raise RuntimeError(
                 "DATABASE_URL must be set in production."
             )
 
         if not cls.USE_MYSQL:
+
             raise RuntimeError(
                 "USE_MYSQL=true must be set in production."
             )
 
-        if not cls.RATE_LIMIT_STORAGE_URI:
+        if not cls.SQLALCHEMY_DATABASE_URI:
+
             raise RuntimeError(
-                "RATE_LIMIT_STORAGE_URI must be set in production."
+                "A valid production database URI "
+                "must be configured."
+            )
+
+
+        # ------------------------------------------------------
+        # Rate limiting
+        # ------------------------------------------------------
+
+        if not cls.RATE_LIMIT_STORAGE_URI:
+
+            raise RuntimeError(
+                "RATE_LIMIT_STORAGE_URI must be set "
+                "in production."
+            )
+
+
+        # ------------------------------------------------------
+        # CORS
+        # ------------------------------------------------------
+
+        if cls.CORS_ORIGINS == "*":
+
+            raise RuntimeError(
+                "CORS_ORIGINS must explicitly specify "
+                "allowed production origins."
             )
