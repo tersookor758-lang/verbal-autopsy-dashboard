@@ -1,6 +1,11 @@
+"""
+Application entry point for the Verbal Autopsy Outcome Dashboard.
+"""
+
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 from flask import Flask
 from flask_cors import CORS
@@ -14,14 +19,12 @@ from extensions import (
     limiter,
 )
 
-# Import models so SQLAlchemy knows about them
 from models import (
     User,
     VerbalAutopsy,
     RefreshToken,
 )
 
-# Blueprints
 from dashboard import dashboard_bp
 from api import api_bp
 from auth import auth_bp
@@ -34,17 +37,19 @@ from admin import admin_bp
 
 def validate_security_config(app):
     """
-    Fail fast when required security configuration is missing.
+    Validate security configuration.
     """
+
+    Config.validate()
 
     if not app.config.get("SECRET_KEY"):
         raise RuntimeError(
-            "SECRET_KEY must be set when running in production."
+            "SECRET_KEY must be configured."
         )
 
     if not app.config.get("JWT_SECRET_KEY"):
         raise RuntimeError(
-            "JWT_SECRET_KEY environment variable must be set."
+            "JWT_SECRET_KEY must be configured."
         )
 
 
@@ -54,26 +59,14 @@ def validate_security_config(app):
 
 def create_default_admin():
     """
-    Create the default administrator account if the database
-    does not contain any users.
+    Create the development administrator account.
 
-    Default administrator:
-        Username: admin
-        Password: admin123
-
-    The account is automatically verified because the initial
-    administrator must be able to access the system.
-
-    Change the default password immediately in a real
-    deployment.
+    This function is intentionally disabled in production.
     """
 
-    # Never create a default account in production.
     if Config.IS_PRODUCTION:
         return
 
-    # Only create the default administrator when there are
-    # no users in the database.
     if User.query.count() == 0:
 
         admin = User(
@@ -84,9 +77,14 @@ def create_default_admin():
             is_active=True,
         )
 
-        admin.set_password("admin123")
+        admin.set_password(
+            "admin123"
+        )
 
-        db.session.add(admin)
+        db.session.add(
+            admin
+        )
+
         db.session.commit()
 
         print("=" * 60)
@@ -94,7 +92,11 @@ def create_default_admin():
         print("Username : admin")
         print("Password : admin123")
         print("Role     : admin")
-        print("Verified : True")
+        print("Active   : True")
+        print("=" * 60)
+        print(
+            "IMPORTANT: This account is for development only."
+        )
         print("=" * 60)
 
 
@@ -105,39 +107,72 @@ def create_default_admin():
 def create_app():
     """
     Application factory.
-
-    Creates and configures the Flask application,
-    initializes extensions, imports route modules,
-    registers blueprints, and creates database tables.
     """
 
-    app = Flask(__name__)
+    app = Flask(
+        __name__
+    )
 
     # ------------------------------------------------------
-    # Application Configuration
+    # Configuration
     # ------------------------------------------------------
 
-    app.config.from_object(Config)
+    app.config.from_object(
+        Config
+    )
 
     # ------------------------------------------------------
-    # Validate Security Configuration
+    # Security Validation
     # ------------------------------------------------------
 
-    validate_security_config(app)
+    validate_security_config(
+        app
+    )
 
     # ------------------------------------------------------
     # Initialize Extensions
     # ------------------------------------------------------
 
-    db.init_app(app)
+    db.init_app(
+        app
+    )
 
-    login_manager.init_app(app)
+    login_manager.init_app(
+        app
+    )
 
-    jwt.init_app(app)
+    jwt.init_app(
+        app
+    )
 
-    limiter.init_app(app)
+    # ------------------------------------------------------
+    # Flask-Limiter
+    #
+    # Development uses in-memory storage.
+    # Production requires a persistent backend.
+    # ------------------------------------------------------
 
-    CORS(app)
+    limiter_kwargs = {}
+
+    if Config.RATE_LIMIT_STORAGE_URI:
+
+        limiter_kwargs[
+            "storage_uri"
+        ] = Config.RATE_LIMIT_STORAGE_URI
+
+    limiter.init_app(
+        app,
+        **limiter_kwargs
+    )
+
+    # ------------------------------------------------------
+    # CORS
+    # ------------------------------------------------------
+
+    CORS(
+        app,
+        origins=Config.CORS_ORIGINS,
+    )
 
     # ------------------------------------------------------
     # Import Route Modules
@@ -172,7 +207,7 @@ def create_app():
 
     app.register_blueprint(
         api_bp,
-        url_prefix="/api"
+        url_prefix="/api",
     )
 
     # ------------------------------------------------------
@@ -180,11 +215,18 @@ def create_app():
     # ------------------------------------------------------
 
     app.register_blueprint(
-        admin_bp
+        admin_bp,
+        url_prefix="/admin",
     )
 
     # ------------------------------------------------------
     # Database Initialization
+    # ------------------------------------------------------
+    #
+    # Keep this for the current development environment.
+    #
+    # Production database schema should ultimately be managed
+    # using Flask-Migrate/Alembic.
     # ------------------------------------------------------
 
     with app.app_context():
@@ -204,12 +246,13 @@ app = create_app()
 
 
 # ==========================================================
-# Development Server
+# Development Entry Point
 # ==========================================================
 
 if __name__ == "__main__":
 
     app.run(
-        debug=True,
-        port=5001
+        host="127.0.0.1",
+        port=5001,
+        debug=Config.DEBUG,
     )
