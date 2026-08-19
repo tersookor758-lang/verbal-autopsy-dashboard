@@ -6,35 +6,99 @@ Handles:
 - Records
 - Analytics
 - Reports
-- Administrator user management
 """
 
 import json
 import os
 
 from flask import (
-    flash,
-    redirect,
     render_template,
     request,
-    url_for,
 )
 
-from flask_login import (
-    current_user,
-    login_required,
-)
+from flask_login import login_required
 
 from dashboard import dashboard_bp
 from extensions import db
-from models import (
-    User,
-    VerbalAutopsy,
-)
+from models import VerbalAutopsy
 
 from resources.utils.dashboard_statistics import (
     get_dashboard_statistics,
 )
+
+
+# ==========================================================
+# Geographic Reference Data
+# ==========================================================
+
+def load_geographic_data():
+    """
+    Load the complete Nigerian state and LGA reference data.
+
+    Geographic filter options come from the reference JSON files,
+    NOT from the states/LGAs currently represented in the database.
+    """
+
+    base_dir = os.path.dirname(
+        os.path.dirname(__file__)
+    )
+
+    resources_dir = os.path.join(
+        base_dir,
+        "resources",
+        "raw",
+    )
+
+    states_file = os.path.join(
+        resources_dir,
+        "states.json",
+    )
+
+    lgas_file = os.path.join(
+        resources_dir,
+        "lgas.json",
+    )
+
+    states = []
+    all_lgas = {}
+
+    # ------------------------------------------------------
+    # States
+    # ------------------------------------------------------
+
+    try:
+        with open(
+            states_file,
+            "r",
+            encoding="utf-8",
+        ) as file:
+            states = json.load(file)
+
+    except (
+        FileNotFoundError,
+        json.JSONDecodeError,
+    ):
+        states = []
+
+    # ------------------------------------------------------
+    # LGAs
+    # ------------------------------------------------------
+
+    try:
+        with open(
+            lgas_file,
+            "r",
+            encoding="utf-8",
+        ) as file:
+            all_lgas = json.load(file)
+
+    except (
+        FileNotFoundError,
+        json.JSONDecodeError,
+    ):
+        all_lgas = {}
+
+    return states, all_lgas
 
 
 # ==========================================================
@@ -74,37 +138,37 @@ def records():
 
     state = request.args.get(
         "state",
-        ""
+        "",
     ).strip()
 
     lga = request.args.get(
         "lga",
-        ""
+        "",
     ).strip()
 
     facility = request.args.get(
         "facility",
-        ""
+        "",
     ).strip()
 
     sex = request.args.get(
         "sex",
-        ""
+        "",
     ).strip()
 
     cause = request.args.get(
         "cause",
-        ""
+        "",
     ).strip()
 
     year = request.args.get(
         "year",
-        ""
+        "",
     ).strip()
 
     patient = request.args.get(
         "patient",
-        ""
+        "",
     ).strip()
 
     # ------------------------------------------------------
@@ -115,7 +179,7 @@ def records():
         page = int(
             request.args.get(
                 "page",
-                1
+                1,
             )
         )
     except (TypeError, ValueError):
@@ -125,7 +189,7 @@ def records():
         per_page = int(
             request.args.get(
                 "per_page",
-                20
+                20,
             )
         )
     except (TypeError, ValueError):
@@ -133,12 +197,12 @@ def records():
 
     page = max(
         page,
-        1
+        1,
     )
 
     per_page = min(
         max(per_page, 10),
-        100
+        100,
     )
 
     # ------------------------------------------------------
@@ -206,57 +270,37 @@ def records():
     records = pagination.items
 
     # ------------------------------------------------------
-    # States
+    # Geographic Reference Data
+    # ------------------------------------------------------
+    #
+    # IMPORTANT:
+    #
+    # States and LGAs are NOT taken from the database.
+    #
+    # This ensures the filters contain the complete Nigerian
+    # geographic reference list even when there are currently
+    # no records from a particular state or LGA.
     # ------------------------------------------------------
 
-    states = [
-        value[0]
-        for value in (
-            db.session.query(
-                VerbalAutopsy.state_name
-            )
-            .filter(
-                VerbalAutopsy.state_name.isnot(None)
-            )
-            .filter(
-                VerbalAutopsy.state_name != ""
-            )
-            .distinct()
-            .order_by(
-                VerbalAutopsy.state_name
-            )
-            .all()
-        )
-    ]
+    states, all_lgas = load_geographic_data()
 
     # ------------------------------------------------------
-    # LGAs
+    # Selected state's LGAs
+    # ------------------------------------------------------
+    #
+    # When a state is selected, use the complete LGA list
+    # belonging to that state.
+    #
+    # Do NOT restrict this to LGAs with records.
     # ------------------------------------------------------
 
-    lga_query = db.session.query(
-        VerbalAutopsy.lga_name
-    ).filter(
-        VerbalAutopsy.lga_name.isnot(None)
-    ).filter(
-        VerbalAutopsy.lga_name != ""
-    )
+    lgas = []
 
     if state:
-        lga_query = lga_query.filter(
-            VerbalAutopsy.state_name == state
+        lgas = all_lgas.get(
+            state,
+            [],
         )
-
-    lgas = [
-        value[0]
-        for value in (
-            lga_query
-            .distinct()
-            .order_by(
-                VerbalAutopsy.lga_name
-            )
-            .all()
-        )
-    ]
 
     # ------------------------------------------------------
     # Facilities
@@ -328,53 +372,18 @@ def records():
     ]
 
     # ------------------------------------------------------
-    # State -> LGA mapping
-    # ------------------------------------------------------
-
-    all_lgas = {}
-
-    lga_file = os.path.join(
-        os.path.dirname(
-            os.path.dirname(__file__)
-        ),
-        "resources",
-        "raw",
-        "lgas.json",
-    )
-
-    try:
-
-        with open(
-            lga_file,
-            "r",
-            encoding="utf-8",
-        ) as file:
-
-            all_lgas = json.load(file)
-
-    except (
-        FileNotFoundError,
-        json.JSONDecodeError,
-    ):
-
-        all_lgas = {}
-
-    # ------------------------------------------------------
     # Render
     # ------------------------------------------------------
 
     return render_template(
         "records.html",
-
         records=records,
         pagination=pagination,
-
         states=states,
         lgas=lgas,
         facilities=facilities,
         causes=causes,
         years=years,
-
         all_lgas=all_lgas,
     )
 
@@ -411,234 +420,4 @@ def reports():
 
     return render_template(
         "reports.html"
-    )
-
-
-# ==========================================================
-# Administrator - User Management
-# ==========================================================
-
-@dashboard_bp.route("/admin/users")
-@login_required
-def admin_users():
-    """
-    Display the administrator user-management page.
-
-    Only administrators are allowed to access this page.
-    """
-
-    if not current_user.is_admin():
-        flash(
-            "You do not have permission to access "
-            "user management.",
-            "danger"
-        )
-
-        return redirect(
-            url_for("dashboard.index")
-        )
-
-    users = User.query.order_by(
-        User.created_at.desc()
-    ).all()
-
-    return render_template(
-        "admin_users.html",
-        users=users,
-    )
-
-
-# ==========================================================
-# Administrator - Approve User
-# ==========================================================
-
-@dashboard_bp.route(
-    "/admin/users/<int:user_id>/approve",
-    methods=["POST"]
-)
-@login_required
-def approve_user(user_id):
-    """
-    Approve a user account.
-    """
-
-    if not current_user.is_admin():
-        flash(
-            "You do not have permission to perform "
-            "this action.",
-            "danger"
-        )
-
-        return redirect(
-            url_for("dashboard.index")
-        )
-
-    user = User.query.get_or_404(
-        user_id
-    )
-
-    user.is_verified = True
-    user.is_active = True
-
-    db.session.commit()
-
-    flash(
-        f"User '{user.username}' has been approved.",
-        "success"
-    )
-
-    return redirect(
-        url_for("dashboard.admin_users")
-    )
-
-
-# ==========================================================
-# Administrator - Activate / Deactivate
-# ==========================================================
-
-@dashboard_bp.route(
-    "/admin/users/<int:user_id>/toggle-active",
-    methods=["POST"]
-)
-@login_required
-def toggle_user_active(user_id):
-    """
-    Activate or deactivate a user account.
-    """
-
-    if not current_user.is_admin():
-        flash(
-            "You do not have permission to perform "
-            "this action.",
-            "danger"
-        )
-
-        return redirect(
-            url_for("dashboard.index")
-        )
-
-    user = User.query.get_or_404(
-        user_id
-    )
-
-    # Prevent an administrator from accidentally
-    # deactivating their own account.
-    if user.id == current_user.id:
-        flash(
-            "You cannot deactivate your own account.",
-            "warning"
-        )
-
-        return redirect(
-            url_for("dashboard.admin_users")
-        )
-
-    user.is_active = not user.is_active
-
-    db.session.commit()
-
-    if user.is_active:
-
-        flash(
-            f"User '{user.username}' has been activated.",
-            "success"
-        )
-
-    else:
-
-        flash(
-            f"User '{user.username}' has been deactivated.",
-            "warning"
-        )
-
-    return redirect(
-        url_for("dashboard.admin_users")
-    )
-
-
-# ==========================================================
-# Administrator - Change Role
-# ==========================================================
-
-@dashboard_bp.route(
-    "/admin/users/<int:user_id>/role",
-    methods=["POST"]
-)
-@login_required
-def change_user_role(user_id):
-    """
-    Change a user's role.
-
-    Allowed roles:
-        user
-        upload_user
-        admin
-    """
-
-    if not current_user.is_admin():
-        flash(
-            "You do not have permission to perform "
-            "this action.",
-            "danger"
-        )
-
-        return redirect(
-            url_for("dashboard.index")
-        )
-
-    user = User.query.get_or_404(
-        user_id
-    )
-
-    # Prevent an administrator from changing
-    # their own role accidentally.
-    if user.id == current_user.id:
-
-        flash(
-            "You cannot change your own administrator role.",
-            "warning"
-        )
-
-        return redirect(
-            url_for("dashboard.admin_users")
-        )
-
-    new_role = (
-        request.form.get(
-            "role",
-            ""
-        )
-        .strip()
-        .lower()
-    )
-
-    allowed_roles = {
-        "user",
-        "upload_user",
-        "admin",
-    }
-
-    if new_role not in allowed_roles:
-
-        flash(
-            "Invalid role selected.",
-            "danger"
-        )
-
-        return redirect(
-            url_for("dashboard.admin_users")
-        )
-
-    user.role = new_role
-
-    db.session.commit()
-
-    flash(
-        f"Role for '{user.username}' changed to "
-        f"'{new_role}'.",
-        "success"
-    )
-
-    return redirect(
-        url_for("dashboard.admin_users")
     )
