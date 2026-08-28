@@ -1,60 +1,37 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-```
-<title>Verbal Autopsy Dashboard | Health Data Intelligence</title>
+    <title>Verbal Autopsy Dashboard | Health Data Intelligence</title>
 
-<meta
-    name="description"
-    content="Verbal Autopsy Dashboard — a modern platform for managing, analysing and reporting verbal autopsy data."
->
+    <meta
+        name="description"
+        content="Verbal Autopsy Dashboard — a modern platform for managing, analysing and reporting verbal autopsy data."
+    >
 
-<link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='css/landing.css') }}"
->
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/landing.css') }}"
+    >
 
-<link
-    rel="preconnect"
-    href="https://fonts.googleapis.com"
->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-<link
-    rel="preconnect"
-    href="https://fonts.gstatic.com"
-    crossorigin
->
-
-<link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
-    rel="stylesheet"
->
-```
-
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+        rel="stylesheet"
+    >
 </head>
 
 <body>
 
-```
-<!-- =====================================================
-     NAVIGATION
-====================================================== -->
-
 <header class="site-header">
-
     <nav class="navbar">
 
-        <a
-            href="{{ url_for('dashboard.home') }}"
-            class="brand"
-        >
-            <span class="brand-mark">
-                VA
-            </span>
+        <a href="{{ url_for('dashboard.home') }}" class="brand">
+            <span class="brand-mark">VA</span>
 
             <span class="brand-text">
                 <strong>Verbal Autopsy</strong>
@@ -63,41 +40,20 @@
         </a>
 
         <div class="nav-links">
-
-            <a href="#about">
-                About
-            </a>
-
-            <a href="#capabilities">
-                Capabilities
-            </a>
-
-            <a href="#insights">
-                Insights
-            </a>
-
-            <a href="#about-platform">
-                Platform
-            </a>
-
+            <a href="#about">About</a>
+            <a href="#capabilities">Capabilities</a>
+            <a href="#insights">Insights</a>
+            <a href="#about-platform">Platform</a>
         </div>
 
         <div class="nav-actions">
-
-            <a
-                href="{{ url_for('auth.login') }}"
-                class="nav-login"
-            >
+            <a href="{{ url_for('auth.login') }}" class="nav-login">
                 Sign in
             </a>
 
-            <a
-                href="{{ url_for('auth.register') }}"
-                class="nav-register"
-            >
+            <a href="{{ url_for('auth.signup') }}" class="nav-register">
                 Get started
             </a>
-
         </div>
 
         <button
@@ -112,21 +68,14 @@
         </button>
 
     </nav>
-
 </header>
 
-
 <main>
-
-    <!-- =================================================
-         HERO
-    ================================================== -->
 
     <section class="hero">
 
         <div class="hero-glow glow-one"></div>
         <div class="hero-glow glow-two"></div>
-
         <div class="hero-grid"></div>
 
         <div class="hero-content">
@@ -157,32 +106,22 @@
                     <span>→</span>
                 </a>
 
-                <a
-                    href="#about"
-                    class="secondary-button"
-                >
+                <a href="#about" class="secondary-button">
                     Explore platform
                 </a>
 
             </div>
 
             <div class="hero-trust">
-
                 <span class="trust-line"></span>
 
                 <span>
                     Built for health data teams,
                     researchers and decision-makers
                 </span>
-
             </div>
 
         </div>
-
-
-        <!-- =================================================
-             HERO DATA VISUAL
-        ================================================== -->
 
         <div class="hero-visual">
 
@@ -192,97 +131,55 @@
             <div class="dashboard-preview">
 
                 <div class="preview-header">
-
                     <div>
-                        <span class="preview-label">
-                            LIVE OVERVIEW
-                        </span>
-
-                        <strong>
-                            Health Data
-                        </strong>
+                        <span class="preview-label">LIVE OVERVIEW</span>
+                        <strong>Health Data</strong>
                     </div>
 
-                    <span class="preview-status">
-                        ● ACTIVE
-                    </span>
-
+                    <span class="preview-status">● ACTIVE</span>
                 </div>
-
 
                 <div class="preview-metrics">
 
                     <div class="metric-card">
-
-                        <span>
-                            RECORDS
-                        </span>
-
-                        <strong>
-                            12,486
-                        </strong>
-
-                        <small>
-                            +12.8%
-                        </small>
-
+                        <span>RECORDS</span>
+                        <strong>12,486</strong>
+                        <small>+12.8%</small>
                     </div>
 
                     <div class="metric-card">
-
-                        <span>
-                            LOCATIONS
-                        </span>
-
-                        <strong>
-                            36
-                        </strong>
-
-                        <small>
-                            States
-                        </small>
-
+                        <span>LOCATIONS</span>
+                        <strong>36</strong>
+                        <small>States</small>
                     </div>
 
                 </div>
-
 
                 <div class="chart-card">
 
                     <div class="chart-heading">
-
-                        <span>
-                            Reporting activity
-                        </span>
-
-                        <small>
-                            2026
-                        </small>
-
+                        <span>Reporting activity</span>
+                        <small>2026</small>
                     </div>
 
                     <div class="chart">
-
-                        <span style="height: 28%"></span>
-                        <span style="height: 42%"></span>
-                        <span style="height: 35%"></span>
-                        <span style="height: 55%"></span>
-                        <span style="height: 48%"></span>
-                        <span style="height: 68%"></span>
-                        <span style="height: 61%"></span>
-                        <span style="height: 78%"></span>
-                        <span style="height: 71%"></span>
-                        <span style="height: 88%"></span>
-                        <span style="height: 81%"></span>
-                        <span style="height: 94%"></span>
-
+                        <span style="height:28%"></span>
+                        <span style="height:42%"></span>
+                        <span style="height:35%"></span>
+                        <span style="height:55%"></span>
+                        <span style="height:48%"></span>
+                        <span style="height:68%"></span>
+                        <span style="height:61%"></span>
+                        <span style="height:78%"></span>
+                        <span style="height:71%"></span>
+                        <span style="height:88%"></span>
+                        <span style="height:81%"></span>
+                        <span style="height:94%"></span>
                     </div>
 
                 </div>
 
-
                 <div class="preview-footer">
-
                     <div>
                         <span class="footer-icon">✓</span>
                         Verified data
@@ -297,7 +194,6 @@
                         <span class="footer-icon">▣</span>
                         Reports
                     </div>
-
                 </div>
 
             </div>
@@ -305,11 +201,6 @@
         </div>
 
     </section>
-
-
-    <!-- =================================================
-         PLATFORM STRIP
-    ================================================== -->
 
     <section class="platform-strip">
 
@@ -341,15 +232,7 @@
 
     </section>
 
-
-    <!-- =================================================
-         ABOUT
-    ================================================== -->
-
-    <section
-        class="content-section about-section"
-        id="about"
-    >
+    <section class="content-section about-section" id="about">
 
         <div class="section-label">
             01 — ABOUT
@@ -358,12 +241,10 @@
         <div class="section-grid">
 
             <div class="section-title">
-
                 <h2>
                     Understanding the
                     <span>story behind the data.</span>
                 </h2>
-
             </div>
 
             <div class="section-copy">
@@ -396,11 +277,6 @@
 
     </section>
 
-
-    <!-- =================================================
-         CAPABILITIES
-    ================================================== -->
-
     <section
         class="content-section capabilities-section"
         id="capabilities"
@@ -424,22 +300,13 @@
 
         </div>
 
-
         <div class="capability-grid">
 
             <article class="capability-card featured">
+                <div class="card-number">01</div>
+                <div class="card-icon">◈</div>
 
-                <div class="card-number">
-                    01
-                </div>
-
-                <div class="card-icon">
-                    ◈
-                </div>
-
-                <h3>
-                    Data Management
-                </h3>
+                <h3>Data Management</h3>
 
                 <p>
                     Organize verbal autopsy records in a
@@ -448,23 +315,13 @@
                 </p>
 
                 <div class="card-line"></div>
-
             </article>
 
-
             <article class="capability-card">
+                <div class="card-number">02</div>
+                <div class="card-icon">◌</div>
 
-                <div class="card-number">
-                    02
-                </div>
-
-                <div class="card-icon">
-                    ◌
-                </div>
-
-                <h3>
-                    Analytics
-                </h3>
+                <h3>Analytics</h3>
 
                 <p>
                     Explore patterns across geography,
@@ -473,23 +330,13 @@
                 </p>
 
                 <div class="card-line"></div>
-
             </article>
 
-
             <article class="capability-card">
+                <div class="card-number">03</div>
+                <div class="card-icon">↗</div>
 
-                <div class="card-number">
-                    03
-                </div>
-
-                <div class="card-icon">
-                    ↗
-                </div>
-
-                <h3>
-                    Reporting
-                </h3>
+                <h3>Reporting</h3>
 
                 <p>
                     Convert complex datasets into clear
@@ -498,23 +345,13 @@
                 </p>
 
                 <div class="card-line"></div>
-
             </article>
 
-
             <article class="capability-card">
+                <div class="card-number">04</div>
+                <div class="card-icon">◉</div>
 
-                <div class="card-number">
-                    04
-                </div>
-
-                <div class="card-icon">
-                    ◉
-                </div>
-
-                <h3>
-                    Controlled Access
-                </h3>
+                <h3>Controlled Access</h3>
 
                 <p>
                     Role-based access helps ensure that
@@ -523,22 +360,13 @@
                 </p>
 
                 <div class="card-line"></div>
-
             </article>
 
         </div>
 
     </section>
 
-
-    <!-- =================================================
-         INSIGHTS
-    ================================================== -->
-
-    <section
-        class="content-section insights-section"
-        id="insights"
-    >
+    <section class="content-section insights-section" id="insights">
 
         <div class="insights-visual">
 
@@ -546,15 +374,8 @@
             <div class="insight-ring ring-two"></div>
 
             <div class="insight-center">
-
-                <span>
-                    DATA
-                </span>
-
-                <strong>
-                    → INSIGHT
-                </strong>
-
+                <span>DATA</span>
+                <strong>→ INSIGHT</strong>
             </div>
 
             <div class="floating-data data-one">
@@ -573,7 +394,6 @@
             </div>
 
         </div>
-
 
         <div class="insights-copy">
 
@@ -595,37 +415,15 @@
             </p>
 
             <ul class="insight-list">
-
-                <li>
-                    <span>01</span>
-                    Geographic distribution
-                </li>
-
-                <li>
-                    <span>02</span>
-                    Demographic patterns
-                </li>
-
-                <li>
-                    <span>03</span>
-                    Facility reporting
-                </li>
-
-                <li>
-                    <span>04</span>
-                    Cause-of-death analysis
-                </li>
-
+                <li><span>01</span> Geographic distribution</li>
+                <li><span>02</span> Demographic patterns</li>
+                <li><span>03</span> Facility reporting</li>
+                <li><span>04</span> Cause-of-death analysis</li>
             </ul>
 
         </div>
 
     </section>
-
-
-    <!-- =================================================
-         PLATFORM
-    ================================================== -->
 
     <section
         class="content-section platform-section"
@@ -652,65 +450,33 @@
             <div class="lifecycle">
 
                 <div class="lifecycle-step">
-
                     <span>01</span>
-
-                    <strong>
-                        Collect
-                    </strong>
-
-                    <small>
-                        Structured records
-                    </small>
-
+                    <strong>Collect</strong>
+                    <small>Structured records</small>
                 </div>
 
                 <div class="lifecycle-line"></div>
 
                 <div class="lifecycle-step">
-
                     <span>02</span>
-
-                    <strong>
-                        Manage
-                    </strong>
-
-                    <small>
-                        Centralized data
-                    </small>
-
+                    <strong>Manage</strong>
+                    <small>Centralized data</small>
                 </div>
 
                 <div class="lifecycle-line"></div>
 
                 <div class="lifecycle-step">
-
                     <span>03</span>
-
-                    <strong>
-                        Analyse
-                    </strong>
-
-                    <small>
-                        Data intelligence
-                    </small>
-
+                    <strong>Analyse</strong>
+                    <small>Data intelligence</small>
                 </div>
 
                 <div class="lifecycle-line"></div>
 
                 <div class="lifecycle-step">
-
                     <span>04</span>
-
-                    <strong>
-                        Report
-                    </strong>
-
-                    <small>
-                        Actionable insight
-                    </small>
-
+                    <strong>Report</strong>
+                    <small>Actionable insight</small>
                 </div>
 
             </div>
@@ -718,11 +484,6 @@
         </div>
 
     </section>
-
-
-    <!-- =================================================
-         CTA
-    ================================================== -->
 
     <section class="cta-section">
 
@@ -756,7 +517,7 @@
                 </a>
 
                 <a
-                    href="{{ url_for('auth.register') }}"
+                    href="{{ url_for('auth.signup') }}"
                     class="secondary-button"
                 >
                     Create account
@@ -770,11 +531,6 @@
 
 </main>
 
-
-<!-- =====================================================
-     FOOTER
-====================================================== -->
-
 <footer class="site-footer">
 
     <div class="footer-main">
@@ -785,16 +541,12 @@
                 href="{{ url_for('dashboard.home') }}"
                 class="brand"
             >
-
-                <span class="brand-mark">
-                    VA
-                </span>
+                <span class="brand-mark">VA</span>
 
                 <span class="brand-text">
                     <strong>Verbal Autopsy</strong>
                     <small>Dashboard</small>
                 </span>
-
             </a>
 
             <p>
@@ -804,50 +556,30 @@
 
         </div>
 
-
         <div class="footer-links">
 
             <div>
-
-                <span class="footer-heading">
-                    PLATFORM
-                </span>
-
-                <a href="#about">
-                    About
-                </a>
-
-                <a href="#capabilities">
-                    Capabilities
-                </a>
-
-                <a href="#insights">
-                    Insights
-                </a>
-
+                <span class="footer-heading">PLATFORM</span>
+                <a href="#about">About</a>
+                <a href="#capabilities">Capabilities</a>
+                <a href="#insights">Insights</a>
             </div>
 
-
             <div>
-
-                <span class="footer-heading">
-                    ACCESS
-                </span>
+                <span class="footer-heading">ACCESS</span>
 
                 <a href="{{ url_for('auth.login') }}">
                     Sign in
                 </a>
 
-                <a href="{{ url_for('auth.register') }}">
+                <a href="{{ url_for('auth.signup') }}">
                     Register
                 </a>
-
             </div>
 
         </div>
 
     </div>
-
 
     <div class="footer-bottom">
 
@@ -863,11 +595,7 @@
 
 </footer>
 
-
-<script
-    src="{{ url_for('static', filename='js/landing.js') }}"
-></script>
-```
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
 
 </body>
 </html>
