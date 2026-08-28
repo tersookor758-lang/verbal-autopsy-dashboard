@@ -1,75 +1,64 @@
-/*
-=========================================
+# /*
+
 Verbal Autopsy Outcome Dashboard
 Global Styles
-=========================================
+=============
+
 */
 
-/* ------------------------------
-   Theme Variables
------------------------------- */
-
 :root {
-
-    --bg-color: #f8f9fa;
-    --text-color: #212529;
-    --heading-color: #212529;
-    --paragraph-color: #6c757d;
-
+--bg-color: #f8f9fa;
+--text-color: #212529;
+--heading-color: #212529;
+--paragraph-color: #6c757d;
+--card-bg: #ffffff;
+--border-color: #dee2e6;
+--close-filter: none;
 }
 
 html[data-theme="dark"] {
-
-    --bg-color: #121212;
-    --text-color: #f1f1f1;
-    --heading-color: #ffffff;
-    --paragraph-color: #c7c7c7;
-
+--bg-color: #121212;
+--text-color: #f1f1f1;
+--heading-color: #ffffff;
+--paragraph-color: #c7c7c7;
+--card-bg: #1e1e1e;
+--border-color: #3a3a3a;
+--close-filter: invert(1);
 }
 
-/* ------------------------------
-   General Page
------------------------------- */
+/* =========================================
+General Page
+========================================= */
+
+html,
+body {
+min-height: 100%;
+}
 
 body {
-
-    background-color: var(--bg-color);
-
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-
-    color: var(--text-color);
-
-    margin: 0;
-
-    padding: 0;
-
-    min-height: 100vh;
-
-    display: flex;
-
-    flex-direction: column;
-
-    -webkit-font-smoothing: antialiased;
-
-    transition:
-        background-color .3s ease,
-        color .3s ease;
-
+background-color: var(--bg-color);
+color: var(--text-color);
+font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+margin: 0;
+padding: 0;
+min-height: 100vh;
+-webkit-font-smoothing: antialiased;
+transition:
+background-color .3s ease,
+color .3s ease;
 }
 
-/* ------------------------------
-   Main Content
------------------------------- */
+/* =========================================
+Main Content
+========================================= */
 
 .container-fluid {
-
-    flex: 1;
-
+flex: 1;
 }
 
-/* ------------------------------
-   Headings
------------------------------- */
+/* =========================================
+Typography
+========================================= */
 
 h1,
 h2,
@@ -77,190 +66,144 @@ h3,
 h4,
 h5,
 h6 {
-
-    font-weight: 600;
-
-    color: var(--heading-color);
-
-    transition: color .3s ease;
-
+color: var(--heading-color);
+font-weight: 600;
+transition: color .3s ease;
 }
-
-/* ------------------------------
-   Paragraphs
------------------------------- */
 
 p {
-
-    color: var(--paragraph-color);
-
-    transition: color .3s ease;
-
+color: var(--paragraph-color);
+transition: color .3s ease;
 }
 
-/* ------------------------------
-   Links
------------------------------- */
-
 a {
-
-    text-decoration: none;
-
+text-decoration: none;
 }
 
 a:hover {
-
-    opacity: .85;
-
+opacity: .85;
 }
 
-/* ------------------------------
-   Cards
------------------------------- */
+/* =========================================
+Cards
+========================================= */
 
 .card {
-
-    border-radius: 12px;
-
-    box-shadow: 0 2px 8px rgba(0,0,0,.04);
-
+background-color: var(--card-bg);
+border-color: var(--border-color);
+border-radius: 12px;
+color: var(--text-color);
+box-shadow: 0 2px 8px rgba(0, 0, 0, .04);
+transition:
+background-color .3s ease,
+color .3s ease,
+border-color .3s ease;
 }
 
-/* ------------------------------
-   Buttons
------------------------------- */
+/* =========================================
+Buttons
+========================================= */
 
 .btn {
-
-    border-radius: 8px;
-
-    transition: all .2s ease;
-
+border-radius: 8px;
+transition: all .2s ease;
 }
 
 .btn:hover {
-
-    transform: translateY(-1px);
-
+transform: translateY(-1px);
 }
 
-/* ------------------------------
-   Tables
------------------------------- */
+/* =========================================
+Tables
+========================================= */
 
 .table {
-
-    margin-bottom: 0;
-
+margin-bottom: 0;
+color: var(--text-color);
 }
 
-/* ------------------------------
-   Form Controls
------------------------------- */
+/* =========================================
+Form Controls
+========================================= */
 
 .form-control,
 .form-select {
-
-    border-radius: 8px;
-
-    transition:
-        border-color .2s ease,
-        box-shadow .2s ease;
-
+border-radius: 8px;
+transition:
+border-color .2s ease,
+box-shadow .2s ease,
+background-color .2s ease,
+color .2s ease;
 }
 
-/* ------------------------------
-   Badges
------------------------------- */
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-select {
+background-color: #242424;
+border-color: #444;
+color: #f1f1f1;
+}
+
+html[data-theme="dark"] .form-control::placeholder {
+color: #999;
+}
+
+/* =========================================
+Badges
+========================================= */
 
 .badge {
-
-    font-size: .85rem;
-
+font-size: .85rem;
 }
 
-/* ------------------------------
-   Footer
------------------------------- */
-
-footer {
-
-    margin-top: 40px;
-
-    padding: 20px;
-
-    text-align: center;
-
-    color: var(--paragraph-color);
-
-    transition: color .3s ease;
-
-}
 /* =========================================
-   Theme Utility Classes
+Theme Utilities
 ========================================= */
 
 .theme-muted {
-
-    color: var(--paragraph-color) !important;
-
+color: var(--paragraph-color) !important;
 }
 
 .theme-text {
-
-    color: var(--text-color) !important;
-
+color: var(--text-color) !important;
 }
-/* ==========================================
-   Dark Mode Modal Support
-========================================== */
+
+/* =========================================
+Dark Mode Modals
+========================================= */
 
 .modal-content {
-
-    background: var(--bg-color);
-
-    color: var(--text-color);
-
+background-color: var(--card-bg);
+color: var(--text-color);
+border-color: var(--border-color);
 }
 
 .modal-header {
-
-    background: var(--bg-color);
-
-    color: var(--text-color);
-
-    border-bottom: 1px solid #444;
-
+background-color: var(--card-bg);
+color: var(--text-color);
+border-bottom-color: var(--border-color);
 }
 
 .modal-footer {
-
-    background: var(--bg-color);
-
-    border-top: 1px solid #444;
-
+background-color: var(--card-bg);
+border-top-color: var(--border-color);
 }
 
 .modal-title {
-
-    color: var(--text-color);
-
+color: var(--heading-color);
 }
 
 .btn-close {
-
-    filter: var(--close-filter);
-
+filter: var(--close-filter);
 }
 
-:root {
+/* =========================================
+Footer
+========================================= */
 
-    --close-filter: none;
-
-}
-
-html[data-theme="dark"] {
-
-    --close-filter: invert(1);
-
+footer {
+margin-top: 40px;
+padding: 20px;
+text-align: center;
+color: var(--paragraph-color);
+transition: color .3s ease;
 }
