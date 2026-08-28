@@ -28,23 +28,25 @@ LGAS_FILE = BASE_DIR / "resources" / "raw" / "lgas.json"
 def load_states():
     """Load the Nigerian states list."""
 
-    with open(
-        STATES_FILE,
-        "r",
-        encoding="utf-8",
-    ) as file:
-        return json.load(file)
+    try:
+        with open(STATES_FILE, "r", encoding="utf-8") as file:
+            return json.load(file)
+
+    except (FileNotFoundError, json.JSONDecodeError) as error:
+        current_app.logger.exception(error)
+        return []
 
 
 def load_lgas():
     """Load the state-to-LGA mapping."""
 
-    with open(
-        LGAS_FILE,
-        "r",
-        encoding="utf-8",
-    ) as file:
-        return json.load(file)
+    try:
+        with open(LGAS_FILE, "r", encoding="utf-8") as file:
+            return json.load(file)
+
+    except (FileNotFoundError, json.JSONDecodeError) as error:
+        current_app.logger.exception(error)
+        return {}
 
 
 verbal_autopsy_ns = Namespace(
@@ -126,9 +128,7 @@ class VerbalAutopsyList(Resource):
 # Single Record Operations
 # ==========================================================
 
-@verbal_autopsy_ns.route(
-    "/<string:patientid>"
-)
+@verbal_autopsy_ns.route("/<string:patientid>")
 class VerbalAutopsyDetail(Resource):
 
     # ------------------------------------------------------
@@ -202,12 +202,12 @@ class VerbalAutopsyDetail(Resource):
             "interview_time",
         }
 
-        data = request.json or {}
+        data = request.get_json(
+            silent=True
+        ) or {}
 
         try:
-
             for key, value in data.items():
-
                 if key in allowed_fields:
                     setattr(
                         record,
@@ -218,7 +218,6 @@ class VerbalAutopsyDetail(Resource):
             db.session.commit()
 
         except Exception as error:
-
             db.session.rollback()
 
             current_app.logger.exception(
@@ -253,9 +252,7 @@ class VerbalAutopsyDetail(Resource):
             }, 404
 
         try:
-
             db.session.delete(record)
-
             db.session.commit()
 
             return {
@@ -265,7 +262,6 @@ class VerbalAutopsyDetail(Resource):
             }, 200
 
         except Exception as error:
-
             db.session.rollback()
 
             current_app.logger.exception(
@@ -308,24 +304,33 @@ class UploadRecords(Resource):
                 "message": "No file uploaded"
             }, 400
 
-        allowed_extensions = {
-            "." + extension
-            for extension in current_app.config[
-                "ALLOWED_UPLOAD_EXTENSIONS"
-            ]
-        }
-
         filename = (
             uploaded_file.filename or ""
-        ).lower()
+        ).strip().lower()
+
+        if "." not in filename:
+            return {
+                "message":
+                    "Unsupported file format. "
+                    "Upload CSV, Excel or JSON."
+            }, 400
 
         extension = (
-            "."
-            + filename.split(".")[-1]
+            filename.rsplit(
+                ".",
+                1,
+            )[1]
         )
 
-        if extension not in allowed_extensions:
+        allowed_extensions = {
+            extension.lower()
+            for extension in current_app.config.get(
+                "ALLOWED_UPLOAD_EXTENSIONS",
+                set(),
+            )
+        }
 
+        if extension not in allowed_extensions:
             return {
                 "message":
                     "Unsupported file format. "
@@ -333,7 +338,6 @@ class UploadRecords(Resource):
             }, 400
 
         try:
-
             result = process_upload(
                 uploaded_file
             )
@@ -347,7 +351,6 @@ class UploadRecords(Resource):
             }, 200
 
         except ValueError as error:
-
             db.session.rollback()
 
             return {
@@ -355,7 +358,6 @@ class UploadRecords(Resource):
             }, 400
 
         except Exception as error:
-
             db.session.rollback()
 
             current_app.logger.exception(
@@ -403,7 +405,6 @@ class ExportRecords(Resource):
         }
 
         if file_type not in download_names:
-
             return {
                 "message":
                     "Unsupported export format. "
@@ -411,7 +412,6 @@ class ExportRecords(Resource):
             }, 400
 
         try:
-
             exported_file = export_records(
                 VerbalAutopsy.query
                 .order_by(
@@ -422,13 +422,11 @@ class ExportRecords(Resource):
             )
 
         except ValueError as error:
-
             return {
                 "message": str(error)
             }, 400
 
         except Exception as error:
-
             current_app.logger.exception(
                 error
             )
