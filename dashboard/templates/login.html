@@ -1,161 +1,164 @@
+
 {% extends "auth_base.html" %}
 
-{% block title %}
-Login
-{% endblock %}
+{% block title %}Sign In | Verbal Autopsy Dashboard{% endblock %}
 
 {% block content %}
 
-<div class="container">
+<div class="auth-page">
 
-    <div class="row justify-content-center mt-5">
+    <div class="auth-background">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="grid-pattern"></div>
+    </div>
 
-        <div class="col-lg-5 col-md-7 col-sm-10">
+    <div class="auth-card">
 
-            <div class="card shadow-lg border-0">
+        <div class="brand">
 
-                <div class="card-body p-4">
+            <div class="brand-mark">
+                VA
+            </div>
 
-                    <div class="text-center mb-4">
+            <div>
+                <strong>Verbal Autopsy</strong>
+                <span>Dashboard</span>
+            </div>
 
-                        <i class="bi bi-shield-lock-fill display-4 text-primary"></i>
+        </div>
 
-                        <h2 class="mt-3 mb-1">
-                            Verbal Autopsy Dashboard
-                        </h2>
+        <div class="auth-heading">
 
-                        <p class="theme-muted">
-                            Sign in to continue
-                        </p>
+            <span class="eyebrow">
+                HEALTH DATA PLATFORM
+            </span>
 
+            <h1>
+                Welcome back
+            </h1>
+
+            <p>
+                Sign in to access your health data dashboard.
+            </p>
+
+        </div>
+
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
                     </div>
 
+                {% endfor %}
 
-                    <!-- Flash Messages -->
+            {% endif %}
 
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-
-                        {% if messages %}
-
-                            {% for category, message in messages %}
-
-                                <div class="alert alert-{{ category }}">
-
-                                    {{ message }}
-
-                                </div>
-
-                            {% endfor %}
-
-                        {% endif %}
-
-                    {% endwith %}
+        {% endwith %}
 
 
-                    <!-- Login Form -->
+        <form method="POST">
 
-                    <form method="POST">
+            <div class="form-group">
 
-                        <div class="mb-3">
+                <label for="username">
+                    Username
+                </label>
 
-                            <label class="form-label">
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Enter your username"
+                    autocomplete="username"
+                    required
+                    autofocus
+                >
 
-                                Username
-
-                            </label>
-
-                            <input
-                                type="text"
-                                name="username"
-                                class="form-control"
-                                required
-                                autofocus
-                                autocomplete="username"
-                            >
-
-                        </div>
+            </div>
 
 
-                        <div class="mb-4">
+            <div class="form-group">
 
-                            <label class="form-label">
+                <label for="password">
+                    Password
+                </label>
 
-                                Password
+                <div class="password-field">
 
-                            </label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    >
 
-                            <div class="input-group">
-
-                                <input
-                                    type="password"
-                                    name="password"
-                                    id="password"
-                                    class="form-control"
-                                    required
-                                    autocomplete="current-password"
-                                >
-
-                                <button
-                                    class="btn btn-outline-secondary"
-                                    type="button"
-                                    id="togglePassword"
-                                    aria-label="Show password"
-                                >
-
-                                    <i class="bi bi-eye"></i>
-
-                                </button>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="d-grid">
-
-                            <button
-                                type="submit"
-                                class="btn btn-primary btn-lg"
-                            >
-
-                                <i class="bi bi-box-arrow-in-right"></i>
-
-                                Login
-
-                            </button>
-
-                        </div>
-
-                    </form>
-
-
-                    <!-- Registration -->
-
-                    <div class="text-center mt-4">
-
-                        <span class="theme-muted">
-
-                            Don't have an account?
-
-                        </span>
-
-                        <a
-                            href="{{ url_for('auth.signup') }}"
-                            class="text-decoration-none"
-                        >
-
-                            Sign Up
-
-                        </a>
-
-                    </div>
-
+                    <button
+                        type="button"
+                        id="togglePassword"
+                        aria-label="Show password"
+                    >
+                        <span id="passwordIcon">◉</span>
+                    </button>
 
                 </div>
 
             </div>
 
+
+            <button
+                type="submit"
+                class="login-button"
+            >
+                <span>Sign in</span>
+                <span class="arrow">→</span>
+            </button>
+
+        </form>
+
+
+        <div class="divider">
+            <span>NEW TO THE PLATFORM?</span>
         </div>
+
+
+        <a
+            href="{{ url_for('auth.signup') }}"
+            class="signup-button"
+        >
+            Create an account
+        </a>
+
+
+        <div class="security-note">
+
+            <span class="security-icon">✓</span>
+
+            <span>
+                Secure, role-based access to health data
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="auth-footer">
+
+        <span>
+            © 2026 Verbal Autopsy Dashboard
+        </span>
+
+        <span>
+            Health Data Intelligence Platform
+        </span>
 
     </div>
 
@@ -170,41 +173,26 @@ Login
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    const password =
-        document.getElementById("password");
+    const password = document.getElementById("password");
+    const toggle = document.getElementById("togglePassword");
+    const icon = document.getElementById("passwordIcon");
 
-    const toggle =
-        document.getElementById("togglePassword");
-
-    const icon =
-        toggle.querySelector("i");
-
+    if (!password || !toggle || !icon) {
+        return;
+    }
 
     toggle.addEventListener("click", function () {
 
-        if (password.type === "password") {
+        const visible = password.type === "text";
 
-            password.type = "text";
+        password.type = visible ? "password" : "text";
 
-            icon.className = "bi bi-eye-slash";
+        icon.textContent = visible ? "◉" : "○";
 
-            toggle.setAttribute(
-                "aria-label",
-                "Hide password"
-            );
-
-        } else {
-
-            password.type = "password";
-
-            icon.className = "bi bi-eye";
-
-            toggle.setAttribute(
-                "aria-label",
-                "Show password"
-            );
-
-        }
+        toggle.setAttribute(
+            "aria-label",
+            visible ? "Show password" : "Hide password"
+        );
 
     });
 
@@ -213,3 +201,4 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 {% endblock %}
+
