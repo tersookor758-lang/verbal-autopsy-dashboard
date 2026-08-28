@@ -8,18 +8,18 @@ authorizations = {
         "type": "apiKey",
         "in": "header",
         "name": "Authorization",
-        "description": "JWT authorization header. Enter: Bearer <access_token>",
+        "description": (
+            "JWT authorization header. "
+            "Enter: Bearer <access_token>"
+        ),
     }
 }
 
 
 api = Api(
     api_bp,
-
     version="1.0",
-
     title="Verbal Autopsy Outcome Dashboard API",
-
     description="""
 REST API for the Verbal Autopsy Outcome Dashboard.
 
@@ -36,20 +36,12 @@ This API provides endpoints for:
 
 Built with Flask, Flask-RESTX and MySQL.
 """,
-
     doc="/swagger",
-
     authorizations=authorizations,
-
     security=[{"BearerAuth": []}],
-
     ordered=True,
-
     contact="JP",
-
     license="MIT",
-
     default="Verbal Autopsy",
-
-    default_label="Verbal Autopsy Operations"
+    default_label="Verbal Autopsy Operations",
 )
