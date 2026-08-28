@@ -1,327 +1,128 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "auth_base.html" %}
 
-<head>
-    <meta charset="UTF-8">
+{% block title %}Sign Up{% endblock %}
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Sign Up - Verbal Autopsy Dashboard</title>
-
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
-
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-    >
-</head>
-
-<body class="bg-light">
+{% block content %}
 
 <div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-lg-5 col-md-7 col-sm-10">
 
-    <div
-        class="row justify-content-center align-items-center"
-        style="min-height: 100vh;"
-    >
+```
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
 
-        <div class="col-md-6 col-lg-5">
+                <div class="text-center mb-4">
+                    <h2 class="mb-1">Create Account</h2>
+                    <p class="theme-muted mb-0">
+                        Register for the Verbal Autopsy Dashboard
+                    </p>
+                </div>
 
-            <div class="card shadow border-0">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
 
-                <div class="card-body p-4">
+                <form method="POST">
 
-                    <!-- Page Header -->
-                    <div class="text-center mb-4">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            Username
+                        </label>
 
-                        <i
-                            class="bi bi-person-plus-fill"
-                            style="font-size: 3rem;"
-                        ></i>
-
-                        <h2 class="fw-bold mt-2">
-                            Create Account
-                        </h2>
-
-                        <p class="text-muted">
-                            Register for the Verbal Autopsy Dashboard
-                        </p>
-
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            class="form-control"
+                            required
+                            autofocus
+                            autocomplete="username"
+                        >
                     </div>
 
+                    <div class="mb-3">
+                        <label for="email" class="form-label">
+                            Email Address
+                        </label>
 
-                    <!-- Flash Messages -->
-                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            class="form-control"
+                            required
+                            autocomplete="email"
+                        >
+                    </div>
 
-                        {% if messages %}
+                    <div class="mb-3">
+                        <label for="password" class="form-label">
+                            Password
+                        </label>
 
-                            {% for category, message in messages %}
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="form-control"
+                            required
+                            autocomplete="new-password"
+                        >
+                    </div>
 
-                                <div
-                                    class="alert alert-{{ category }}"
-                                    role="alert"
-                                >
-                                    {{ message }}
-                                </div>
+                    <div class="mb-4">
+                        <label for="confirm_password" class="form-label">
+                            Confirm Password
+                        </label>
 
-                            {% endfor %}
+                        <input
+                            type="password"
+                            id="confirm_password"
+                            name="confirm_password"
+                            class="form-control"
+                            required
+                            autocomplete="new-password"
+                        >
+                    </div>
 
-                        {% endif %}
-
-                    {% endwith %}
-
-
-                    <form
-                        method="POST"
-                        action="{{ url_for('auth.signup') }}"
-                    >
-
-                        <!-- Username -->
-                        <div class="mb-3">
-
-                            <label
-                                for="username"
-                                class="form-label"
-                            >
-                                Username
-                            </label>
-
-                            <input
-                                type="text"
-                                id="username"
-                                name="username"
-                                class="form-control"
-                                required
-                                autocomplete="username"
-                            >
-
-                        </div>
-
-
-                        <!-- Email -->
-                        <div class="mb-3">
-
-                            <label
-                                for="email"
-                                class="form-label"
-                            >
-                                Email Address
-                            </label>
-
-                            <input
-                                type="email"
-                                id="email"
-                                name="email"
-                                class="form-control"
-                                required
-                                autocomplete="email"
-                            >
-
-                        </div>
-
-
-                        <!-- Account Type -->
-                        <div class="mb-3">
-
-                            <label class="form-label">
-                                Account Type
-                            </label>
-
-                            <input
-                                type="text"
-                                class="form-control"
-                                value="Regular User"
-                                disabled
-                            >
-
-                            <div class="form-text">
-                                All new accounts start as regular users.
-                                An administrator can grant upload permission
-                                later.
-                            </div>
-
-                        </div>
-
-
-                        <!-- Password -->
-                        <div class="mb-3">
-
-                            <label
-                                for="password"
-                                class="form-label"
-                            >
-                                Password
-                            </label>
-
-                            <input
-                                type="password"
-                                id="password"
-                                name="password"
-                                class="form-control"
-                                required
-                                autocomplete="new-password"
-                            >
-
-                            <!-- Live password requirements -->
-                            <div class="mt-2 small">
-
-                                <div id="length" class="text-danger">
-                                    <i class="bi bi-x-circle"></i>
-                                    At least 8 characters
-                                </div>
-
-                                <div id="uppercase" class="text-danger">
-                                    <i class="bi bi-x-circle"></i>
-                                    At least one uppercase letter
-                                </div>
-
-                                <div id="lowercase" class="text-danger">
-                                    <i class="bi bi-x-circle"></i>
-                                    At least one lowercase letter
-                                </div>
-
-                                <div id="number" class="text-danger">
-                                    <i class="bi bi-x-circle"></i>
-                                    At least one number
-                                </div>
-
-                                <div id="special" class="text-danger">
-                                    <i class="bi bi-x-circle"></i>
-                                    At least one special character
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        <!-- Confirm Password -->
-                        <div class="mb-4">
-
-                            <label
-                                for="confirm_password"
-                                class="form-label"
-                            >
-                                Confirm Password
-                            </label>
-
-                            <input
-                                type="password"
-                                id="confirm_password"
-                                name="confirm_password"
-                                class="form-control"
-                                required
-                                autocomplete="new-password"
-                            >
-
-                            <div
-                                id="password-match"
-                                class="small mt-1"
-                            ></div>
-
-                        </div>
-
-
-                        <!-- Submit -->
+                    <div class="d-grid">
                         <button
                             type="submit"
-                            class="btn btn-primary w-100"
+                            class="btn btn-primary btn-lg"
                         >
-                            <i class="bi bi-person-plus"></i>
                             Create Account
                         </button>
-
-                    </form>
-
-
-                    <!-- Login Link -->
-                    <div class="text-center mt-4">
-
-                        <span class="text-muted">
-                            Already have an account?
-                        </span>
-
-                        <a
-                            href="{{ url_for('auth.login') }}"
-                            class="text-decoration-none"
-                        >
-                            Login
-                        </a>
-
                     </div>
 
+                </form>
+
+                <div class="text-center mt-4">
+                    <span class="theme-muted">
+                        Already have an account?
+                    </span>
+
+                    <a
+                        href="{{ url_for('auth.login') }}"
+                        class="text-decoration-none"
+                    >
+                        Sign In
+                    </a>
                 </div>
 
             </div>
-
         </div>
 
     </div>
+</div>
+```
 
 </div>
 
-
-<script>
-    // Update the password requirements while the user types.
-    const password = document.getElementById("password");
-    const confirmPassword = document.getElementById("confirm_password");
-
-    function updateRequirement(id, valid) {
-
-        const element = document.getElementById(id);
-
-        element.classList.toggle("text-success", valid);
-        element.classList.toggle("text-danger", !valid);
-
-        element.querySelector("i").className = valid
-            ? "bi bi-check-circle"
-            : "bi bi-x-circle";
-    }
-
-    password.addEventListener("input", function () {
-
-        const value = password.value;
-
-        updateRequirement("length", value.length >= 8);
-        updateRequirement("uppercase", /[A-Z]/.test(value));
-        updateRequirement("lowercase", /[a-z]/.test(value));
-        updateRequirement("number", /[0-9]/.test(value));
-        updateRequirement(
-            "special",
-            /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(value)
-        );
-    });
-
-
-    // Show whether both password fields match.
-    confirmPassword.addEventListener("input", function () {
-
-        const message = document.getElementById("password-match");
-
-        if (!confirmPassword.value) {
-            message.textContent = "";
-            return;
-        }
-
-        if (password.value === confirmPassword.value) {
-
-            message.textContent = "Passwords match.";
-            message.className = "small mt-1 text-success";
-
-        } else {
-
-            message.textContent = "Passwords do not match.";
-            message.className = "small mt-1 text-danger";
-        }
-    });
-</script>
-
-</body>
-
-</html>
+{% endblock %}
