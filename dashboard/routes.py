@@ -2,6 +2,7 @@
 Dashboard Routes
 
 Handles:
+- Public landing page
 - Main dashboard
 - Records
 - Analytics
@@ -11,20 +12,13 @@ Handles:
 import json
 import os
 
-from flask import (
-    render_template,
-    request,
-)
-
+from flask import render_template, request
 from flask_login import login_required
 
 from dashboard import dashboard_bp
 from extensions import db
 from models import VerbalAutopsy
-
-from resources.utils.dashboard_statistics import (
-    get_dashboard_statistics,
-)
+from resources.utils.dashboard_statistics import get_dashboard_statistics
 
 
 # ==========================================================
@@ -32,85 +26,51 @@ from resources.utils.dashboard_statistics import (
 # ==========================================================
 
 def load_geographic_data():
-    """
-    Load the complete Nigerian state and LGA reference data.
+    """Load Nigerian states and LGA reference data."""
 
-    Geographic filter options come from the reference JSON files,
-    NOT from the states/LGAs currently represented in the database.
-    """
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    resources_dir = os.path.join(base_dir, "resources", "raw")
 
-    base_dir = os.path.dirname(
-        os.path.dirname(__file__)
-    )
-
-    resources_dir = os.path.join(
-        base_dir,
-        "resources",
-        "raw",
-    )
-
-    states_file = os.path.join(
-        resources_dir,
-        "states.json",
-    )
-
-    lgas_file = os.path.join(
-        resources_dir,
-        "lgas.json",
-    )
+    states_file = os.path.join(resources_dir, "states.json")
+    lgas_file = os.path.join(resources_dir, "lgas.json")
 
     states = []
     all_lgas = {}
 
-    # ------------------------------------------------------
-    # States
-    # ------------------------------------------------------
-
     try:
-        with open(
-            states_file,
-            "r",
-            encoding="utf-8",
-        ) as file:
+        with open(states_file, "r", encoding="utf-8") as file:
             states = json.load(file)
-
-    except (
-        FileNotFoundError,
-        json.JSONDecodeError,
-    ):
+    except (FileNotFoundError, json.JSONDecodeError, TypeError):
         states = []
 
-    # ------------------------------------------------------
-    # LGAs
-    # ------------------------------------------------------
-
     try:
-        with open(
-            lgas_file,
-            "r",
-            encoding="utf-8",
-        ) as file:
+        with open(lgas_file, "r", encoding="utf-8") as file:
             all_lgas = json.load(file)
-
-    except (
-        FileNotFoundError,
-        json.JSONDecodeError,
-    ):
+    except (FileNotFoundError, json.JSONDecodeError, TypeError):
         all_lgas = {}
 
     return states, all_lgas
 
 
 # ==========================================================
-# Main Dashboard
+# Public Landing Page
 # ==========================================================
 
 @dashboard_bp.route("/")
+def home():
+    """Display the public Verbal Autopsy Dashboard landing page."""
+
+    return render_template("landing.html")
+
+
+# ==========================================================
+# Main Dashboard
+# ==========================================================
+
+@dashboard_bp.route("/dashboard")
 @login_required
 def index():
-    """
-    Display the main Verbal Autopsy dashboard.
-    """
+    """Display the authenticated Verbal Autopsy dashboard."""
 
     statistics = get_dashboard_statistics()
 
@@ -127,92 +87,41 @@ def index():
 @dashboard_bp.route("/records")
 @login_required
 def records():
-    """
-    Display Verbal Autopsy records with filtering
-    and pagination.
-    """
+    """Display Verbal Autopsy records with filtering and pagination."""
 
-    # ------------------------------------------------------
-    # Query parameters
-    # ------------------------------------------------------
-
-    state = request.args.get(
-        "state",
-        "",
-    ).strip()
-
-    lga = request.args.get(
-        "lga",
-        "",
-    ).strip()
-
-    facility = request.args.get(
-        "facility",
-        "",
-    ).strip()
-
-    sex = request.args.get(
-        "sex",
-        "",
-    ).strip()
-
-    cause = request.args.get(
-        "cause",
-        "",
-    ).strip()
-
-    year = request.args.get(
-        "year",
-        "",
-    ).strip()
-
-    patient = request.args.get(
-        "patient",
-        "",
-    ).strip()
+    state = request.args.get("state", "").strip()
+    lga = request.args.get("lga", "").strip()
+    facility = request.args.get("facility", "").strip()
+    sex = request.args.get("sex", "").strip()
+    cause = request.args.get("cause", "").strip()
+    year = request.args.get("year", "").strip()
+    patient = request.args.get("patient", "").strip()
 
     # ------------------------------------------------------
     # Pagination
     # ------------------------------------------------------
 
     try:
-        page = int(
-            request.args.get(
-                "page",
-                1,
-            )
-        )
+        page = int(request.args.get("page", 1))
     except (TypeError, ValueError):
         page = 1
 
     try:
-        per_page = int(
-            request.args.get(
-                "per_page",
-                20,
-            )
-        )
+        per_page = int(request.args.get("per_page", 20))
     except (TypeError, ValueError):
         per_page = 20
 
-    page = max(
-        page,
-        1,
-    )
-
-    per_page = min(
-        max(per_page, 10),
-        100,
-    )
+    page = max(page, 1)
+    per_page = min(max(per_page, 10), 100)
 
     # ------------------------------------------------------
-    # Base query
+    # Base Query
     # ------------------------------------------------------
 
     query = VerbalAutopsy.query
 
     # ------------------------------------------------------
-    # Apply filters
+    # Filters
     # ------------------------------------------------------
 
     if state:
@@ -245,7 +154,7 @@ def records():
             query = query.filter(
                 VerbalAutopsy.interview_year == int(year)
             )
-        except ValueError:
+        except (TypeError, ValueError):
             pass
 
     if patient:
@@ -259,56 +168,33 @@ def records():
     # Pagination
     # ------------------------------------------------------
 
-    pagination = query.order_by(
-        VerbalAutopsy.id.desc()
-    ).paginate(
-        page=page,
-        per_page=per_page,
-        error_out=False,
+    pagination = (
+        query
+        .order_by(VerbalAutopsy.id.desc())
+        .paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False,
+        )
     )
 
-    records = pagination.items
+    records_list = pagination.items
 
     # ------------------------------------------------------
-    # Geographic Reference Data
-    # ------------------------------------------------------
-    #
-    # IMPORTANT:
-    #
-    # States and LGAs are NOT taken from the database.
-    #
-    # This ensures the filters contain the complete Nigerian
-    # geographic reference list even when there are currently
-    # no records from a particular state or LGA.
+    # Geographic Data
     # ------------------------------------------------------
 
     states, all_lgas = load_geographic_data()
 
-    # ------------------------------------------------------
-    # Selected state's LGAs
-    # ------------------------------------------------------
-    #
-    # When a state is selected, use the complete LGA list
-    # belonging to that state.
-    #
-    # Do NOT restrict this to LGAs with records.
-    # ------------------------------------------------------
-
-    lgas = []
-
-    if state:
-        lgas = all_lgas.get(
-            state,
-            [],
-        )
+    lgas = all_lgas.get(state, []) if state else []
 
     # ------------------------------------------------------
     # Facilities
     # ------------------------------------------------------
 
     facilities = [
-        value[0]
-        for value in (
+        row[0]
+        for row in (
             db.session.query(
                 VerbalAutopsy.facility_name
             )
@@ -331,8 +217,8 @@ def records():
     # ------------------------------------------------------
 
     causes = [
-        value[0]
-        for value in (
+        row[0]
+        for row in (
             db.session.query(
                 VerbalAutopsy.cause_of_death
             )
@@ -351,12 +237,12 @@ def records():
     ]
 
     # ------------------------------------------------------
-    # Interview years
+    # Interview Years
     # ------------------------------------------------------
 
     years = [
-        value[0]
-        for value in (
+        row[0]
+        for row in (
             db.session.query(
                 VerbalAutopsy.interview_year
             )
@@ -377,7 +263,7 @@ def records():
 
     return render_template(
         "records.html",
-        records=records,
+        records=records_list,
         pagination=pagination,
         states=states,
         lgas=lgas,
@@ -395,9 +281,7 @@ def records():
 @dashboard_bp.route("/analytics")
 @login_required
 def analytics():
-    """
-    Display dashboard analytics.
-    """
+    """Display dashboard analytics."""
 
     statistics = get_dashboard_statistics()
 
@@ -414,9 +298,7 @@ def analytics():
 @dashboard_bp.route("/reports")
 @login_required
 def reports():
-    """
-    Display dashboard reports.
-    """
+    """Display dashboard reports."""
 
     return render_template(
         "reports.html"
