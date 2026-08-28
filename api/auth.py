@@ -252,7 +252,9 @@ def create_refresh_token(user_id):
         expires_at=datetime.utcnow() + REFRESH_TOKEN_LIFETIME,
     )
 
-    db.session.add(refresh_token)
+    db.session.add(
+        refresh_token
+    )
 
     return raw_token
 
@@ -262,8 +264,7 @@ def create_user_access_token(user):
     Create a JWT access token for a user.
 
     The database remains the source of truth for role,
-    verification and active status. Therefore, protected
-    requests still re-check the user in the database.
+    verification and active status.
     """
 
     return create_access_token(
@@ -320,11 +321,6 @@ def get_refresh_token(raw_token):
 def account_can_authenticate(user):
     """
     Determine whether an account is permitted to log in.
-
-    Login requires:
-        - valid credentials
-        - verified account
-        - active account
     """
 
     if user is None:
@@ -342,6 +338,7 @@ def account_can_authenticate(user):
 
 @auth_ns.route("/login")
 class Login(Resource):
+
     @auth_ns.expect(
         login_request_model,
         validate=False,
@@ -392,27 +389,15 @@ class Login(Resource):
 
         ip_address = request.remote_addr
 
-        # --------------------------------------------------
-        # Validate request body
-        # --------------------------------------------------
-
         if not username or not password:
             return error_response(
                 "Username and password are required.",
                 400,
             )
 
-        # --------------------------------------------------
-        # Find user
-        # --------------------------------------------------
-
         user = User.query.filter_by(
             username=username
         ).first()
-
-        # --------------------------------------------------
-        # Check credentials
-        # --------------------------------------------------
 
         if not user or not user.check_password(
             password
@@ -427,11 +412,6 @@ class Login(Resource):
                 "Invalid username or password.",
                 401,
             )
-
-        # --------------------------------------------------
-        # Credentials are correct, but account approval is
-        # still required.
-        # --------------------------------------------------
 
         if not user.is_verified:
 
@@ -452,10 +432,6 @@ class Login(Resource):
                 403,
             )
 
-        # --------------------------------------------------
-        # Account must also be active.
-        # --------------------------------------------------
-
         if not user.is_active:
 
             current_app.logger.warning(
@@ -474,11 +450,6 @@ class Login(Resource):
                 "Your account has been deactivated.",
                 403,
             )
-
-        # --------------------------------------------------
-        # Normalize legacy roles while the database is
-        # being migrated.
-        # --------------------------------------------------
 
         legacy_role_map = {
             "administrator": "admin",
@@ -508,20 +479,37 @@ class Login(Resource):
                 403,
             )
 
-        # Keep the user's role consistent with the new system.
         if user.role != normalized_role:
+
             user.role = normalized_role
+
             db.session.commit()
 
-        # --------------------------------------------------
-        # Successful login
-        # --------------------------------------------------
+        try:
 
-        response = token_response(
-            "Login successful.",
-            user,
-            include_user=True,
-        )
+            response = token_response(
+                "Login successful.",
+                user,
+                include_user=True,
+            )
+
+            # Persist the newly created refresh token.
+            db.session.commit()
+
+        except Exception as error:
+
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "Failed to create login tokens for user %s: %s",
+                user.id,
+                error,
+            )
+
+            return error_response(
+                "Login failed. Please try again.",
+                500,
+            )
 
         log_successful_login(
             username,
@@ -538,6 +526,7 @@ class Login(Resource):
 
 @auth_ns.route("/refresh")
 class Refresh(Resource):
+
     @auth_ns.expect(
         refresh_request_model,
         validate=False,
@@ -602,6 +591,7 @@ class Refresh(Resource):
         )
 
         if not user:
+
             refresh_token.revoked = True
 
             db.session.commit()
@@ -618,13 +608,8 @@ class Refresh(Resource):
                 401,
             )
 
-        # --------------------------------------------------
-        # Account must remain verified and active.
-        # This means an Admin can immediately stop a user's
-        # ability to obtain new access tokens.
-        # --------------------------------------------------
-
         if not user.is_verified:
+
             refresh_token.revoked = True
 
             db.session.commit()
@@ -642,6 +627,7 @@ class Refresh(Resource):
             )
 
         if not user.is_active:
+
             refresh_token.revoked = True
 
             db.session.commit()
@@ -657,10 +643,6 @@ class Refresh(Resource):
                 "Your account has been deactivated.",
                 403,
             )
-
-        # --------------------------------------------------
-        # Prevent refresh token reuse.
-        # --------------------------------------------------
 
         if refresh_token.revoked:
 
@@ -683,10 +665,6 @@ class Refresh(Resource):
                 401,
             )
 
-        # --------------------------------------------------
-        # Check expiration.
-        # --------------------------------------------------
-
         if refresh_token.expires_at <= datetime.utcnow():
 
             refresh_token.revoked = True
@@ -705,18 +683,31 @@ class Refresh(Resource):
                 401,
             )
 
-        # --------------------------------------------------
-        # Rotate token.
-        # --------------------------------------------------
+        try:
 
-        refresh_token.revoked = True
+            refresh_token.revoked = True
 
-        response = token_response(
-            "Token refreshed successfully.",
-            user,
-        )
+            response = token_response(
+                "Token refreshed successfully.",
+                user,
+            )
 
-        db.session.commit()
+            db.session.commit()
+
+        except Exception as error:
+
+            db.session.rollback()
+
+            current_app.logger.exception(
+                "Failed to refresh token for user %s: %s",
+                user.id,
+                error,
+            )
+
+            return error_response(
+                "Failed to refresh authorization token.",
+                500,
+            )
 
         log_token_refresh(
             user.username,
@@ -733,6 +724,7 @@ class Refresh(Resource):
 
 @auth_ns.route("/logout")
 class Logout(Resource):
+
     @auth_ns.expect(
         logout_request_model,
         validate=False,
@@ -802,6 +794,7 @@ class Logout(Resource):
         db.session.commit()
 
         if user:
+
             log_logout(
                 username,
                 user.id,
