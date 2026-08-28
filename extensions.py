@@ -54,30 +54,19 @@ limiter = Limiter(
 # Security Logger
 # ==========================================================
 
-security_logger = logging.getLogger(
-    "security"
-)
+security_logger = logging.getLogger("security")
 
-security_logger.setLevel(
-    logging.INFO
-)
+security_logger.setLevel(logging.INFO)
 
 if not security_logger.handlers:
-
     handler = logging.StreamHandler()
 
     formatter = logging.Formatter(
-        "%(asctime)s - SECURITY - "
-        "%(levelname)s - %(message)s"
+        "%(asctime)s - SECURITY - %(levelname)s - %(message)s"
     )
 
-    handler.setFormatter(
-        formatter
-    )
-
-    security_logger.addHandler(
-        handler
-    )
+    handler.setFormatter(formatter)
+    security_logger.addHandler(handler)
 
 security_logger.propagate = False
 
@@ -94,9 +83,7 @@ login_manager.login_message = (
     "Please log in to access this page."
 )
 
-login_manager.login_message_category = (
-    "warning"
-)
+login_manager.login_message_category = "warning"
 
 
 # ==========================================================
@@ -107,17 +94,11 @@ jwt = JWTManager()
 
 
 # ==========================================================
-# JWT Error Response Helper
+# JWT Error Response
 # ==========================================================
 
-def jwt_error_response(
-    message,
-    status_code,
-    error=None,
-):
-    """
-    Return a consistent JSON response for JWT errors.
-    """
+def jwt_error_response(message, status_code, error=None):
+    """Return a consistent JSON response for JWT errors."""
 
     response = {
         "message": message,
@@ -126,9 +107,7 @@ def jwt_error_response(
     if error:
         response["error"] = error
 
-    return jsonify(
-        response
-    ), status_code
+    return jsonify(response), status_code
 
 
 # ==========================================================
@@ -137,24 +116,14 @@ def jwt_error_response(
 
 @login_manager.user_loader
 def load_user(user_id):
-    """
-    Reload the browser-session user for Flask-Login.
-    """
+    """Reload the browser-session user for Flask-Login."""
 
     from models import User
 
     try:
+        return db.session.get(User, int(user_id))
 
-        return db.session.get(
-            User,
-            int(user_id),
-        )
-
-    except (
-        TypeError,
-        ValueError,
-    ):
-
+    except (TypeError, ValueError):
         return None
 
 
@@ -164,9 +133,7 @@ def load_user(user_id):
 
 @jwt.unauthorized_loader
 def handle_missing_jwt(error):
-    """
-    Handle requests where no JWT was supplied.
-    """
+    """Handle requests where no JWT was supplied."""
 
     return jwt_error_response(
         "Authorization header with a Bearer token is required.",
@@ -177,9 +144,7 @@ def handle_missing_jwt(error):
 
 @jwt.invalid_token_loader
 def handle_invalid_jwt(error):
-    """
-    Handle malformed or invalid JWTs.
-    """
+    """Handle malformed or invalid JWTs."""
 
     return jwt_error_response(
         "Invalid authorization token.",
@@ -189,13 +154,8 @@ def handle_invalid_jwt(error):
 
 
 @jwt.expired_token_loader
-def handle_expired_jwt(
-    jwt_header,
-    jwt_payload,
-):
-    """
-    Handle expired JWT access tokens.
-    """
+def handle_expired_jwt(jwt_header, jwt_payload):
+    """Handle expired JWT access tokens."""
 
     return jwt_error_response(
         "Authorization token has expired.",
@@ -204,13 +164,8 @@ def handle_expired_jwt(
 
 
 @jwt.revoked_token_loader
-def handle_revoked_jwt(
-    jwt_header,
-    jwt_payload,
-):
-    """
-    Handle revoked JWT access tokens.
-    """
+def handle_revoked_jwt(jwt_header, jwt_payload):
+    """Handle revoked JWT access tokens."""
 
     return jwt_error_response(
         "Authorization token has been revoked.",
@@ -219,13 +174,8 @@ def handle_revoked_jwt(
 
 
 @jwt.needs_fresh_token_loader
-def handle_non_fresh_jwt(
-    jwt_header,
-    jwt_payload,
-):
-    """
-    Handle endpoints that require a fresh JWT.
-    """
+def handle_non_fresh_jwt(jwt_header, jwt_payload):
+    """Handle endpoints that require a fresh JWT."""
 
     return jwt_error_response(
         "A fresh authorization token is required.",
@@ -233,18 +183,9 @@ def handle_non_fresh_jwt(
     )
 
 
-# ==========================================================
-# JWT User Lookup Error
-# ==========================================================
-
 @jwt.user_lookup_error_loader
-def handle_jwt_user_lookup_error(
-    jwt_header,
-    jwt_payload,
-):
-    """
-    Handle a JWT whose associated user cannot be found.
-    """
+def handle_jwt_user_lookup_error(jwt_header, jwt_payload):
+    """Handle a JWT whose associated user cannot be found."""
 
     return jwt_error_response(
         "The user associated with this authorization token "
@@ -253,18 +194,12 @@ def handle_jwt_user_lookup_error(
     )
 
 
-# ==========================================================
-# JWT Token Verification Error
-# ==========================================================
-
 @jwt.token_verification_failed_loader
 def handle_jwt_token_verification_failed(
     jwt_header,
     jwt_payload,
 ):
-    """
-    Handle failed JWT token verification.
-    """
+    """Handle failed JWT token verification."""
 
     return jwt_error_response(
         "Authorization token verification failed.",
