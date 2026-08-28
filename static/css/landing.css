@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+```
+<title>Verbal Autopsy Dashboard</title>
+
+<meta
+    name="description"
+    content="Verbal Autopsy Dashboard for managing, analysing and reporting health data."
+>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/landing.css') }}"
+>
+
+<link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+>
+
+<link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+>
+
+<link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+    rel="stylesheet"
+>
+```
+
+</head>
+
+<body>
+
+<header class="site-header">
+    <nav class="navbar">
+
+```
+    <a href="{{ url_for('dashboard.home') }}" class="brand">
+        <span class="brand-mark">VA</span>
+
+        <span class="brand-text">
+            <strong>Verbal Autopsy</strong>
+            <small>Dashboard</small>
+        </span>
+    </a>
+
+    <div class="nav-links">
+        <a href="#about">About</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#platform">Platform</a>
+    </div>
+
+    <div class="nav-actions">
+        <a href="{{ url_for('auth.login') }}">Sign in</a>
+
+        <a
+            href="{{ url_for('auth.register') }}"
+            class="nav-button"
+        >
+            Get started
+        </a>
+    </div>
+
+    <button
+        type="button"
+        class="mobile-menu"
+        id="mobileMenu"
+        aria-label="Open menu"
+    >
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+</nav>
+```
+
+</header>
+
+<main>
+
+```
+<section class="hero">
+
+    <div class="hero-background"></div>
+
+    <div class="hero-content">
+
+        <div class="eyebrow">
+            <span></span>
+            HEALTH DATA INTELLIGENCE
+        </div>
+
+        <h1>
+            Verbal Autopsy
+            <strong>Dashboard</strong>
+        </h1>
+
+        <p>
+            A modern platform for managing, analysing and
+            reporting verbal autopsy data to support better
+            public health decisions.
+        </p>
+
+        <div class="hero-actions">
+
+            <a
+                href="{{ url_for('auth.login') }}"
+                class="primary-button"
+            >
+                Access Dashboard
+                <span>→</span>
+            </a>
+
+            <a href="#about" class="secondary-button">
+                Learn more
+            </a>
+
+        </div>
+
+        <div class="hero-note">
+            Built for health data teams, researchers and
+            decision-makers.
+        </div>
+
+    </div>
+
+
+    <div class="hero-panel">
+
+        <div class="panel-header">
+            <div>
+                <small>VERBAL AUTOPSY</small>
+                <strong>Data Intelligence</strong>
+            </div>
+
+            <span class="live-status">
+                <i></i> ACTIVE
+            </span>
+        </div>
+
+        <div class="panel-stats">
+
+            <div>
+                <small>RECORDS</small>
+                <strong>12K+</strong>
+            </div>
+
+            <div>
+                <small>STATES</small>
+                <strong>36</strong>
+            </div>
+
+            <div>
+                <small>ANALYTICS</small>
+                <strong>LIVE</strong>
+            </div>
+
+        </div>
+
+        <div class="panel-chart">
+            <span style="height:35%"></span>
+            <span style="height:48%"></span>
+            <span style="height:42%"></span>
+            <span style="height:65%"></span>
+            <span style="height:57%"></span>
+            <span style="height:78%"></span>
+            <span style="height:70%"></span>
+            <span style="height:90%"></span>
+        </div>
+
+        <div class="panel-footer">
+            <span>Data</span>
+            <span>Analysis</span>
+            <span>Reports</span>
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="info-strip">
+
+    <div>
+        <strong>DATA</strong>
+        <span>Structured records</span>
+    </div>
+
+    <div>
+        <strong>ANALYSIS</strong>
+        <span>Evidence-based insights</span>
+    </div>
+
+    <div>
+        <strong>REPORTING</strong>
+        <span>Clear health intelligence</span>
+    </div>
+
+    <div>
+        <strong>SECURITY</strong>
+        <span>Controlled access</span>
+    </div>
+
+</section>
+
+
+<section class="section" id="about">
+
+    <div class="section-label">01 — ABOUT</div>
+
+    <div class="section-content">
+
+        <div>
+            <h2>
+                Turning health data
+                <strong>into understanding.</strong>
+            </h2>
+        </div>
+
+        <div>
+            <p>
+                Verbal autopsy provides an important method for
+                understanding probable causes of death when
+                complete medical certification is unavailable.
+            </p>
+
+            <p>
+                This platform brings verbal autopsy records
+                together in one environment where they can be
+                managed, explored, analysed and reported.
+            </p>
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="section capabilities" id="capabilities">
+
+    <div class="section-label">02 — CAPABILITIES</div>
+
+    <div class="section-heading">
+        <h2>
+            Everything you need to
+            <strong>understand the data.</strong>
+        </h2>
+    </div>
+
+    <div class="feature-grid">
+
+        <article>
+            <span>01</span>
+            <h3>Data Management</h3>
+            <p>
+                Organize and access verbal autopsy records
+                through a centralized platform.
+            </p>
+        </article>
+
+        <article>
+            <span>02</span>
+            <h3>Analytics</h3>
+            <p>
+                Explore patterns across geography,
+                demographics, facilities and causes of death.
+            </p>
+        </article>
+
+        <article>
+            <span>03</span>
+            <h3>Reporting</h3>
+            <p>
+                Transform datasets into useful reports for
+                research, planning and decision-making.
+            </p>
+        </article>
+
+        <article>
+            <span>04</span>
+            <h3>Access Control</h3>
+            <p>
+                Role-based permissions help keep health data
+                accessible to authorized users.
+            </p>
+        </article>
+
+    </div>
+
+</section>
+
+
+<section class="section platform" id="platform">
+
+    <div class="section-label">03 — PLATFORM</div>
+
+    <div class="platform-content">
+
+        <h2>
+            From records to
+            <strong>actionable insight.</strong>
+        </h2>
+
+        <p>
+            The platform follows a simple data lifecycle:
+            collect, manage, analyse and report.
+        </p>
+
+        <div class="lifecycle">
+
+            <div>
+                <strong>01</strong>
+                <span>Collect</span>
+            </div>
+
+            <div>
+                <strong>02</strong>
+                <span>Manage</span>
+            </div>
+
+            <div>
+                <strong>03</strong>
+                <span>Analyse</span>
+            </div>
+
+            <div>
+                <strong>04</strong>
+                <span>Report</span>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="cta">
+
+    <div>
+        <span>READY TO EXPLORE?</span>
+
+        <h2>
+            Make your health data
+            <strong>more useful.</strong>
+        </h2>
+
+        <p>
+            Access the Verbal Autopsy Dashboard and explore
+            your data through a centralized environment.
+        </p>
+
+        <a
+            href="{{ url_for('auth.login') }}"
+            class="primary-button"
+        >
+            Access Dashboard →
+        </a>
+    </div>
+
+</section>
+```
+
+</main>
+
+<footer class="site-footer">
+
+```
+<div class="footer-main">
+
+    <div>
+        <a
+            href="{{ url_for('dashboard.home') }}"
+            class="brand"
+        >
+            <span class="brand-mark">VA</span>
+
+            <span class="brand-text">
+                <strong>Verbal Autopsy</strong>
+                <small>Dashboard</small>
+            </span>
+        </a>
+
+        <p>
+            Health data intelligence for better understanding,
+            analysis and reporting.
+        </p>
+    </div>
+
+    <div class="footer-links">
+        <a href="#about">About</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#platform">Platform</a>
+        <a href="{{ url_for('auth.login') }}">Sign in</a>
+    </div>
+
+</div>
+
+<div class="footer-bottom">
+    <span>© 2026 Verbal Autopsy Dashboard</span>
+    <span>Health Data Intelligence Platform</span>
+</div>
+```
+
+</footer>
+
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+
+</body>
+</html>
