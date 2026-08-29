@@ -4,7 +4,7 @@ Authentication Blueprint
 Handles:
 - Login
 - Logout
-- User Authentication
+- User Registration
 """
 
 from flask import Blueprint
@@ -17,8 +17,6 @@ auth_bp = Blueprint(
 )
 
 
-# Import authentication routes after creating the blueprint.
-#
-# This is required so that the @auth_bp.route(...) decorators
-# in auth/routes.py are executed and the routes are registered.
+# Import routes after creating the blueprint so the
+# route decorators are executed.
 from . import routes
