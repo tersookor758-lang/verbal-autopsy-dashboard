@@ -1,22 +1,16 @@
 {% extends "base.html" %}
 
 {% block title %}
-    User Management - Verbal Autopsy Dashboard
+User Management - Verbal Autopsy Dashboard
 {% endblock %}
-
 
 {% block content %}
 
 <div class="container-fluid py-4">
 
-    <!-- ================================================== -->
-    <!-- Header -->
-    <!-- ================================================== -->
-
     <div class="d-flex justify-content-between align-items-center mb-4">
 
         <div>
-
             <h2 class="fw-bold mb-1">
                 <i class="bi bi-people-fill"></i>
                 User Management
@@ -25,9 +19,7 @@
             <p class="text-muted mb-0">
                 Manage accounts, verification, roles and access permissions.
             </p>
-
         </div>
-
 
         <a
             href="{{ url_for('admin.index') }}"
@@ -40,10 +32,6 @@
     </div>
 
 
-    <!-- ================================================== -->
-    <!-- Flash Messages -->
-    <!-- ================================================== -->
-
     {% with messages = get_flashed_messages(with_categories=true) %}
 
         {% if messages %}
@@ -54,7 +42,6 @@
                     class="alert alert-{{ category }} alert-dismissible fade show"
                     role="alert"
                 >
-
                     {{ message }}
 
                     <button
@@ -72,10 +59,6 @@
 
     {% endwith %}
 
-
-    <!-- ================================================== -->
-    <!-- User Statistics -->
-    <!-- ================================================== -->
 
     <div class="row g-3 mb-4">
 
@@ -165,10 +148,6 @@
     </div>
 
 
-    <!-- ================================================== -->
-    <!-- User Table -->
-    <!-- ================================================== -->
-
     <div class="card shadow-sm border-0">
 
         <div class="card-header py-3">
@@ -179,8 +158,9 @@
 
         </div>
 
-
         <div class="card-body p-0">
+
+            {% if users %}
 
             <div class="table-responsive">
 
@@ -189,7 +169,6 @@
                     <thead>
 
                         <tr>
-
                             <th>ID</th>
                             <th>User</th>
                             <th>Email</th>
@@ -197,12 +176,12 @@
                             <th>Verification</th>
                             <th>Account Status</th>
                             <th>Created</th>
-                            <th class="text-end">Actions</th>
-
+                            <th class="text-end">
+                                Actions
+                            </th>
                         </tr>
 
                     </thead>
-
 
                     <tbody>
 
@@ -210,14 +189,10 @@
 
                         <tr>
 
-                            <!-- ID -->
-
                             <td>
                                 {{ user.id }}
                             </td>
 
-
-                            <!-- User -->
 
                             <td>
 
@@ -236,14 +211,10 @@
                             </td>
 
 
-                            <!-- Email -->
-
                             <td>
                                 {{ user.email }}
                             </td>
 
-
-                            <!-- Role -->
 
                             <td>
 
@@ -273,61 +244,47 @@
                             </td>
 
 
-                            <!-- Verification -->
-
                             <td>
 
                                 {% if user.is_verified %}
 
                                     <span class="badge bg-success">
-
                                         <i class="bi bi-check-circle-fill"></i>
                                         Verified
-
                                     </span>
 
                                 {% else %}
 
                                     <span class="badge bg-warning text-dark">
-
                                         <i class="bi bi-clock-fill"></i>
                                         Pending
-
                                     </span>
 
                                 {% endif %}
 
                             </td>
 
-
-                            <!-- Account Status -->
 
                             <td>
 
                                 {% if user.is_active %}
 
                                     <span class="badge bg-success">
-
                                         <i class="bi bi-person-check-fill"></i>
                                         Active
-
                                     </span>
 
                                 {% else %}
 
                                     <span class="badge bg-danger">
-
                                         <i class="bi bi-person-x-fill"></i>
                                         Inactive
-
                                     </span>
 
                                 {% endif %}
 
                             </td>
 
-
-                            <!-- Created -->
 
                             <td>
 
@@ -344,140 +301,134 @@
                             </td>
 
 
-                            <!-- Actions -->
-
                             <td class="text-end">
 
                                 <div class="d-flex justify-content-end gap-1 flex-wrap">
 
                                     {% if user.id != current_user.id %}
 
-                                        <!-- ================================= -->
-                                        <!-- Verification -->
-                                        <!-- ================================= -->
 
                                         {% if not user.is_verified %}
 
-                                            <form
-                                                method="POST"
-                                                action="{{ url_for(
-                                                    'admin.verify_user',
-                                                    user_id=user.id
-                                                ) }}"
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for('admin.verify_user', user_id=user.id) }}"
+                                        >
+
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token() }}"
                                             >
 
-                                                <button
-                                                    type="submit"
-                                                    class="btn btn-sm btn-success"
-                                                    title="Verify and activate account"
-                                                >
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-success"
+                                                title="Verify and activate account"
+                                            >
+                                                <i class="bi bi-check-circle"></i>
+                                                Verify
+                                            </button>
 
-                                                    <i class="bi bi-check-circle"></i>
-                                                    Verify
-
-                                                </button>
-
-                                            </form>
+                                        </form>
 
                                         {% else %}
-
-                                            <form
-                                                method="POST"
-                                                action="{{ url_for(
-                                                    'admin.unverify_user',
-                                                    user_id=user.id
-                                                ) }}"
-                                                onsubmit="return confirm(
-                                                    'Remove verification from this user?'
-                                                );"
-                                            >
-
-                                                <button
-                                                    type="submit"
-                                                    class="btn btn-sm btn-outline-warning"
-                                                    title="Remove verification"
-                                                >
-
-                                                    <i class="bi bi-x-circle"></i>
-                                                    Unverify
-
-                                                </button>
-
-                                            </form>
-
-                                        {% endif %}
-
-
-                                        <!-- ================================= -->
-                                        <!-- Activation -->
-                                        <!-- ================================= -->
-
-                                        {% if user.is_active %}
-
-                                            <form
-                                                method="POST"
-                                                action="{{ url_for(
-                                                    'admin.deactivate_user',
-                                                    user_id=user.id
-                                                ) }}"
-                                            >
-
-                                                <button
-                                                    type="submit"
-                                                    class="btn btn-sm btn-outline-warning"
-                                                    title="Deactivate account"
-                                                >
-
-                                                    <i class="bi bi-person-x"></i>
-                                                    Deactivate
-
-                                                </button>
-
-                                            </form>
-
-                                        {% else %}
-
-                                            <form
-                                                method="POST"
-                                                action="{{ url_for(
-                                                    'admin.activate_user',
-                                                    user_id=user.id
-                                                ) }}"
-                                            >
-
-                                                <button
-                                                    type="submit"
-                                                    class="btn btn-sm btn-outline-success"
-                                                    title="Activate account"
-                                                >
-
-                                                    <i class="bi bi-person-check"></i>
-                                                    Activate
-
-                                                </button>
-
-                                            </form>
-
-                                        {% endif %}
-
-
-                                        <!-- ================================= -->
-                                        <!-- Role -->
-                                        <!-- ================================= -->
 
                                         <form
                                             method="POST"
-                                            action="{{ url_for(
-                                                'admin.change_role',
-                                                user_id=user.id
-                                            ) }}"
+                                            action="{{ url_for('admin.unverify_user', user_id=user.id) }}"
+                                            onsubmit="return confirm('Remove verification from this user?');"
+                                        >
+
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token() }}"
+                                            >
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-outline-warning"
+                                                title="Remove verification"
+                                            >
+                                                <i class="bi bi-x-circle"></i>
+                                                Unverify
+                                            </button>
+
+                                        </form>
+
+                                        {% endif %}
+
+
+                                        {% if user.is_active %}
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for('admin.deactivate_user', user_id=user.id) }}"
+                                            onsubmit="return confirm('Deactivate this account?');"
+                                        >
+
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token() }}"
+                                            >
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-outline-warning"
+                                                title="Deactivate account"
+                                            >
+                                                <i class="bi bi-person-x"></i>
+                                                Deactivate
+                                            </button>
+
+                                        </form>
+
+                                        {% else %}
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for('admin.activate_user', user_id=user.id) }}"
+                                        >
+
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token() }}"
+                                            >
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-outline-success"
+                                                title="Activate account"
+                                            >
+                                                <i class="bi bi-person-check"></i>
+                                                Activate
+                                            </button>
+
+                                        </form>
+
+                                        {% endif %}
+
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for('admin.change_role', user_id=user.id) }}"
                                             class="d-flex gap-1"
                                         >
+
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token() }}"
+                                            >
 
                                             <select
                                                 name="role"
                                                 class="form-select form-select-sm"
                                                 title="Change role"
+                                                aria-label="Change role for {{ user.username }}"
                                             >
 
                                                 <option
@@ -509,46 +460,40 @@
 
                                             </select>
 
-
                                             <button
                                                 type="submit"
                                                 class="btn btn-sm btn-primary"
                                                 title="Save role"
                                             >
-
                                                 <i class="bi bi-check-lg"></i>
-
                                             </button>
 
                                         </form>
 
 
-                                        <!-- ================================= -->
-                                        <!-- Delete -->
-                                        <!-- ================================= -->
-
                                         <form
                                             method="POST"
-                                            action="{{ url_for(
-                                                'admin.delete_user',
-                                                user_id=user.id
-                                            ) }}"
-                                            onsubmit="return confirm(
-                                                'Are you sure you want to permanently delete this user?'
-                                            );"
+                                            action="{{ url_for('admin.delete_user', user_id=user.id) }}"
+                                            onsubmit="return confirm('Are you sure you want to permanently delete this user?');"
                                         >
+
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token() }}"
+                                            >
 
                                             <button
                                                 type="submit"
                                                 class="btn btn-sm btn-outline-danger"
                                                 title="Delete account"
+                                                aria-label="Delete {{ user.username }}"
                                             >
-
                                                 <i class="bi bi-trash"></i>
-
                                             </button>
 
                                         </form>
+
 
                                     {% else %}
 
@@ -564,26 +509,6 @@
 
                         </tr>
 
-
-                    {% else %}
-
-                        <tr>
-
-                            <td
-                                colspan="8"
-                                class="text-center text-muted py-5"
-                            >
-
-                                <i class="bi bi-people fs-1"></i>
-
-                                <p class="mt-2 mb-0">
-                                    No users have been registered yet.
-                                </p>
-
-                            </td>
-
-                        </tr>
-
                     {% endfor %}
 
                     </tbody>
@@ -591,6 +516,20 @@
                 </table>
 
             </div>
+
+            {% else %}
+
+            <div class="text-center text-muted py-5">
+
+                <i class="bi bi-people fs-1"></i>
+
+                <p class="mt-2 mb-0">
+                    No users have been registered yet.
+                </p>
+
+            </div>
+
+            {% endif %}
 
         </div>
 
