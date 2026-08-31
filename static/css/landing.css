@@ -334,11 +334,11 @@ button {
 }
 
 .hero-content > p {
-    max-width: 590px;
+    max-width: 620px;
     margin-top: 30px;
     color: var(--text-soft);
-    font-size: 17px;
-    line-height: 1.8;
+    font-size: 18px;
+    line-height: 1.85;
 }
 
 .hero-actions {
@@ -356,7 +356,7 @@ button {
     justify-content: center;
     gap: 14px;
     border-radius: 10px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     transition: var(--transition);
 }
@@ -395,7 +395,7 @@ button {
 .hero-note {
     margin-top: 24px;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .hero-visual {
@@ -536,7 +536,7 @@ button {
 
 .metric-card small {
     color: var(--primary);
-    font-size: 8px;
+    font-size: 9px;
 }
 
 .preview-chart {
@@ -549,7 +549,7 @@ button {
 .chart-heading strong {
     margin-top: 4px;
     font-family: var(--font-display);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .chart-heading > small {
@@ -598,7 +598,7 @@ button {
     padding-top: 16px;
     border-top: 1px solid var(--border);
     color: var(--text-muted);
-    font-size: 9px;
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
@@ -635,7 +635,7 @@ button {
 .strip-item span {
     margin-top: 4px;
     color: var(--text-muted);
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .strip-divider {
@@ -682,11 +682,11 @@ button {
 
 .section-heading p,
 .about-copy p {
-    max-width: 650px;
+    max-width: 680px;
     margin-top: 20px;
     color: var(--text-soft);
-    font-size: 15px;
-    line-height: 1.8;
+    font-size: 16px;
+    line-height: 1.85;
 }
 
 .overview-grid {
@@ -711,7 +711,7 @@ button {
 
 .card-topline small {
     color: var(--text-muted);
-    font-size: 8px;
+    font-size: 9px;
     letter-spacing: 0.1em;
 }
 
@@ -801,7 +801,7 @@ button {
     background: rgba(5, 15, 18, 0.96);
     color: var(--text);
     font-family: var(--font-display);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.02em;
     box-shadow:
@@ -837,16 +837,16 @@ button {
 
 .map-error span {
     color: var(--primary);
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.14em;
 }
 
 .map-error small {
-    max-width: 250px;
+    max-width: 270px;
     margin-top: 8px;
     color: var(--text-muted);
-    font-size: 10px;
+    font-size: 12px;
     line-height: 1.6;
 }
 
@@ -856,7 +856,7 @@ button {
     display: flex;
     justify-content: space-between;
     color: var(--text-muted);
-    font-size: 9px;
+    font-size: 11px;
 }
 
 .overview-side {
@@ -885,7 +885,7 @@ button {
 
 .health-stat small {
     color: var(--text-muted);
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .insight-card {
@@ -911,7 +911,7 @@ button {
 
 .insight-card span {
     color: var(--primary);
-    font-size: 8px;
+    font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.15em;
 }
@@ -920,14 +920,14 @@ button {
     display: block;
     margin-top: 7px;
     font-family: var(--font-display);
-    font-size: 17px;
+    font-size: 18px;
 }
 
 .insight-card p {
     margin-top: 12px;
     color: var(--text-soft);
-    font-size: 12px;
-    line-height: 1.7;
+    font-size: 14px;
+    line-height: 1.75;
 }
 
 .row-heading {
@@ -954,12 +954,12 @@ button {
 .large-chart-header strong {
     margin-top: 5px;
     font-family: var(--font-display);
-    font-size: 16px;
+    font-size: 17px;
 }
 
 .chart-legend {
     color: var(--text-muted);
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .chart-legend i {
@@ -985,7 +985,7 @@ button {
     justify-content: space-between;
     padding-bottom: 27px;
     color: var(--text-muted);
-    font-size: 8px;
+    font-size: 10px;
     text-align: right;
 }
 
@@ -1043,13 +1043,14 @@ button {
     display: flex;
     justify-content: space-between;
     color: var(--text-muted);
-    font-size: 8px;
+    font-size: 9px;
 }
 
 .example-note {
     margin-top: 8px;
     color: var(--text-muted);
-    font-size: 9px;
+    font-size: 11px;
+    line-height: 1.6;
 }
 
 .analytics-grid {
@@ -1067,7 +1068,8 @@ button {
 .analytics-subtitle {
     margin-top: 6px;
     color: var(--text-muted);
-    font-size: 11px;
+    font-size: 13px;
+    line-height: 1.65;
 }
 
 .bar-chart {
@@ -1083,11 +1085,12 @@ button {
     justify-content: space-between;
     margin-bottom: 8px;
     color: var(--text-soft);
-    font-size: 11px;
+    font-size: 13px;
 }
 
 .bar-label strong {
     color: var(--primary);
+    font-size: 13px;
 }
 
 .bar-track {
@@ -1122,7 +1125,7 @@ button {
     flex-direction: column;
     justify-content: space-between;
     color: var(--text-muted);
-    font-size: 9px;
+    font-size: 10px;
 }
 
 .population-bars {
@@ -1158,7 +1161,7 @@ button {
     gap: 20px;
     margin-top: 25px;
     color: var(--text-muted);
-    font-size: 9px;
+    font-size: 11px;
 }
 
 .demographic-legend i {
@@ -1227,14 +1230,14 @@ button {
 .capability-card h3 {
     margin-top: 16px;
     font-family: var(--font-display);
-    font-size: 18px;
+    font-size: 19px;
 }
 
 .capability-card p {
     margin-top: 10px;
     color: var(--text-muted);
-    font-size: 12px;
-    line-height: 1.7;
+    font-size: 14px;
+    line-height: 1.75;
 }
 
 .about-grid {
@@ -1257,7 +1260,7 @@ button {
     gap: 10px;
     margin-top: 10px;
     color: var(--primary);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -1297,7 +1300,7 @@ button {
     display: block;
     margin-top: 7px;
     color: var(--text-muted);
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .lifecycle-line {
@@ -1360,11 +1363,11 @@ button {
 }
 
 .cta-content p {
-    max-width: 570px;
+    max-width: 620px;
     margin: 25px auto 0;
     color: var(--text-soft);
-    font-size: 14px;
-    line-height: 1.8;
+    font-size: 16px;
+    line-height: 1.85;
 }
 
 .cta-actions {
@@ -1395,7 +1398,7 @@ button {
     max-width: 390px;
     margin-top: 20px;
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.8;
 }
 
@@ -1420,7 +1423,7 @@ button {
 .footer-links a {
     margin-bottom: 12px;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .footer-links a:hover {
@@ -1439,7 +1442,7 @@ button {
     justify-content: space-between;
     border-top: 1px solid var(--border);
     color: var(--text-muted);
-    font-size: 10px;
+    font-size: 11px;
 }
 
 @keyframes floatPanel {
@@ -1598,7 +1601,7 @@ button {
     }
 
     .hero-content > p {
-        font-size: 15px;
+        font-size: 16px;
     }
 
     .hero-actions,
@@ -1666,6 +1669,10 @@ button {
         display: none;
     }
 
+    .strip-item span {
+        font-size: 11px;
+    }
+
     .data-section {
         padding: 85px 0;
     }
@@ -1677,6 +1684,11 @@ button {
     .section-heading h2,
     .about-grid h2 {
         font-size: clamp(39px, 11vw, 55px);
+    }
+
+    .section-heading p,
+    .about-copy p {
+        font-size: 15px;
     }
 
     .map-card,
@@ -1699,11 +1711,11 @@ button {
     .map-tooltip {
         min-width: 90px;
         padding: 7px 9px;
-        font-size: 9px;
+        font-size: 10px;
     }
 
-    .map-label {
-        font-size: 7px;
+    .map-footer {
+        font-size: 10px;
     }
 
     .stat-grid {
@@ -1719,8 +1731,24 @@ button {
         font-size: 26px;
     }
 
+    .health-stat small {
+        font-size: 11px;
+    }
+
+    .insight-card p {
+        font-size: 13px;
+    }
+
     .trend-chart {
         height: 270px;
+    }
+
+    .chart-y {
+        font-size: 9px;
+    }
+
+    .chart-x {
+        font-size: 8px;
     }
 
     .analytics-grid,
@@ -1730,6 +1758,10 @@ button {
 
     .capability-card {
         min-height: 235px;
+    }
+
+    .capability-card p {
+        font-size: 13px;
     }
 
     .lifecycle {
@@ -1745,6 +1777,10 @@ button {
         margin-top: 20px;
     }
 
+    .lifecycle-step small {
+        font-size: 11px;
+    }
+
     .about-copy {
         padding-top: 0;
     }
@@ -1757,6 +1793,10 @@ button {
         font-size: clamp(42px, 12vw, 58px);
     }
 
+    .cta-content p {
+        font-size: 15px;
+    }
+
     .footer-main {
         grid-template-columns: 1fr;
         gap: 45px;
@@ -1767,12 +1807,21 @@ button {
         gap: 50px;
     }
 
+    .footer-main p {
+        font-size: 13px;
+    }
+
+    .footer-links a {
+        font-size: 12px;
+    }
+
     .footer-bottom {
         min-height: auto;
         padding: 22px 0;
         align-items: flex-start;
         flex-direction: column;
         gap: 8px;
+        font-size: 10px;
     }
 }
 
@@ -1792,6 +1841,10 @@ button {
 
     .hero h1 {
         font-size: 46px;
+    }
+
+    .hero-content > p {
+        font-size: 15px;
     }
 
     .preview-metrics {
