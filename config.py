@@ -6,7 +6,9 @@ import os
 from datetime import timedelta
 
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os.path.abspath(
+    os.path.dirname(__file__)
+)
 
 
 class Config:
@@ -18,20 +20,43 @@ class Config:
 
     ENVIRONMENT = os.environ.get(
         "APP_ENV",
-        os.environ.get("FLASK_ENV", "development"),
+        os.environ.get(
+            "FLASK_ENV",
+            "development",
+        ),
     ).strip().lower()
 
-    IS_PRODUCTION = ENVIRONMENT == "production"
+    VALID_ENVIRONMENTS = {
+        "development",
+        "production",
+        "testing",
+    }
 
-    DEBUG = not IS_PRODUCTION
-    TESTING = False
+    if ENVIRONMENT not in VALID_ENVIRONMENTS:
+        raise RuntimeError(
+            "APP_ENV must be one of: "
+            "development, production, testing."
+        )
+
+    IS_PRODUCTION = (
+        ENVIRONMENT == "production"
+    )
+
+    DEBUG = ENVIRONMENT == "development"
+
+    TESTING = ENVIRONMENT == "testing"
 
     # ==========================================================
     # SECURITY
     # ==========================================================
 
-    SECRET_KEY = os.environ.get("SECRET_KEY")
-    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+    SECRET_KEY = os.environ.get(
+        "SECRET_KEY"
+    )
+
+    JWT_SECRET_KEY = os.environ.get(
+        "JWT_SECRET_KEY"
+    )
 
     if not SECRET_KEY and not IS_PRODUCTION:
         SECRET_KEY = (
@@ -49,11 +74,17 @@ class Config:
     # JWT
     # ==========================================================
 
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(
+        minutes=15
+    )
 
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(
+        days=30
+    )
 
-    JWT_TOKEN_LOCATION = ["headers"]
+    JWT_TOKEN_LOCATION = [
+        "headers"
+    ]
 
     JWT_HEADER_NAME = "Authorization"
 
@@ -65,10 +96,15 @@ class Config:
     # DATABASE
     # ==========================================================
 
-    DATABASE_URL = os.environ.get("DATABASE_URL")
+    DATABASE_URL = os.environ.get(
+        "DATABASE_URL"
+    )
 
     USE_MYSQL = (
-        os.environ.get("USE_MYSQL", "false")
+        os.environ.get(
+            "USE_MYSQL",
+            "false",
+        )
         .strip()
         .lower()
         == "true"
@@ -82,7 +118,9 @@ class Config:
     if USE_MYSQL and DATABASE_URL:
         DATABASE_URI = DATABASE_URL.strip()
 
-        if DATABASE_URI.startswith("mysql://"):
+        if DATABASE_URI.startswith(
+            "mysql://"
+        ):
             DATABASE_URI = DATABASE_URI.replace(
                 "mysql://",
                 "mysql+pymysql://",
@@ -118,7 +156,9 @@ class Config:
 
     SESSION_COOKIE_SAMESITE = "Lax"
 
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
+    PERMANENT_SESSION_LIFETIME = timedelta(
+        hours=24
+    )
 
     # ==========================================================
     # JSON
@@ -135,7 +175,9 @@ class Config:
         "uploads",
     )
 
-    MAX_CONTENT_LENGTH = 1 * 1024 * 1024 * 1024
+    MAX_CONTENT_LENGTH = (
+        1 * 1024 * 1024 * 1024
+    )
 
     ALLOWED_UPLOAD_EXTENSIONS = {
         "csv",
@@ -225,7 +267,19 @@ class Config:
                 "RATE_LIMIT_STORAGE_URI must be set in production."
             )
 
-        if cls.CORS_ORIGINS == "*":
+        if (
+            not isinstance(
+                cls.CORS_ORIGINS,
+                list,
+            )
+            or not cls.CORS_ORIGINS
+        ):
+            raise RuntimeError(
+                "CORS_ORIGINS must specify "
+                "at least one allowed production origin."
+            )
+
+        if cls.CORS_ORIGINS == ["*"]:
             raise RuntimeError(
                 "CORS_ORIGINS must explicitly specify "
                 "allowed production origins."
