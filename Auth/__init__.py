@@ -1,22 +1,15 @@
-"""
-Authentication Blueprint
-
-Handles:
-- Login
-- Logout
-- User Registration
-"""
-
 from flask import Blueprint
 
 
-auth_bp = Blueprint(
-    "auth",
-    __name__,
-    template_folder="../templates",
-)
+def create_auth_blueprint():
+    auth_bp = Blueprint(
+        "auth",
+        __name__,
+        template_folder="../templates",
+    )
 
+    from .routes import register_auth_routes
 
-# Import routes after creating the blueprint so the
-# route decorators are executed.
-from . import routes
+    register_auth_routes(auth_bp)
+
+    return auth_bp
