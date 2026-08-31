@@ -1,13 +1,11 @@
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
-from auth import auth_bp
+from api.auth_security import PasswordValidationError
 from extensions import db
 from models import User
-from api.auth_security import PasswordValidationError
 
 
-@auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.index"))
@@ -27,17 +25,28 @@ def login():
             return render_template("login.html")
 
         if not user.is_verified:
-            flash("Your account is awaiting administrator approval.", "warning")
+            flash(
+                "Your account is awaiting administrator approval.",
+                "warning",
+            )
             return render_template("login.html")
 
         if not user.is_active:
-            flash("Your account has been deactivated. Please contact an administrator.", "danger")
+            flash(
+                "Your account has been deactivated. "
+                "Please contact an administrator.",
+                "danger",
+            )
             return render_template("login.html")
 
         role = (user.role or "").strip().lower()
 
-        if role not in {"user", "upload_user", "admin", "administrator"}:
-            flash("Your account has an invalid role. Please contact an administrator.", "danger")
+        if role not in {"user", "upload_user", "admin"}:
+            flash(
+                "Your account has an invalid role. "
+                "Please contact an administrator.",
+                "danger",
+            )
             return render_template("login.html")
 
         login_user(user)
@@ -47,8 +56,7 @@ def login():
     return render_template("login.html")
 
 
-@auth_bp.route("/register", methods=["GET", "POST"])
-def register():
+def signup():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.index"))
 
@@ -94,12 +102,15 @@ def register():
             db.session.commit()
         except Exception:
             db.session.rollback()
-            flash("Registration could not be completed. Please try again.", "danger")
+            flash(
+                "Registration could not be completed. Please try again.",
+                "danger",
+            )
             return render_template("signup.html")
 
         flash(
-            "Registration submitted successfully. "
-            "Your account must be approved by an administrator before you can log in.",
+            "Registration successful. Your account is awaiting "
+            "administrator approval.",
             "success",
         )
         return redirect(url_for("auth.login"))
@@ -107,14 +118,31 @@ def register():
     return render_template("signup.html")
 
 
-@auth_bp.route("/signup", methods=["GET", "POST"])
-def signup():
-    return register()
-
-
-@auth_bp.route("/logout")
 @login_required
 def logout():
     logout_user()
     flash("You have been logged out successfully.", "info")
     return redirect(url_for("auth.login"))
+
+
+def register_auth_routes(auth_bp):
+    auth_bp.add_url_rule(
+        "/login",
+        endpoint="login",
+        view_func=login,
+        methods=["GET", "POST"],
+    )
+
+    auth_bp.add_url_rule(
+        "/signup",
+        endpoint="signup",
+        view_func=signup,
+        methods=["GET", "POST"],
+    )
+
+    auth_bp.add_url_rule(
+        "/logout",
+        endpoint="logout",
+        view_func=logout,
+        methods=["GET"],
+    )
