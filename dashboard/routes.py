@@ -5,7 +5,7 @@ Dashboard Routes
 import json
 import os
 
-from flask import render_template, request
+from flask import render_template, request, send_file
 from flask_login import login_required
 
 from dashboard import dashboard_bp
@@ -51,6 +51,25 @@ def home():
     return render_template("landing.html")
 
 
+@dashboard_bp.route("/data/nigeria-states.geo.json")
+def nigeria_geojson():
+    """Serve the Nigeria state boundary GeoJSON."""
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    geojson_path = os.path.join(
+        base_dir,
+        "resources",
+        "raw",
+        "nigeria_states.geo.json",
+    )
+
+    return send_file(
+        geojson_path,
+        mimetype="application/geo+json",
+        max_age=3600,
+        conditional=True,
+    )
+
+
 @dashboard_bp.route("/dashboard")
 @login_required
 def index():
@@ -89,14 +108,20 @@ def records():
 
     if state:
         query = query.filter(VerbalAutopsy.state_name == state)
+
     if lga:
         query = query.filter(VerbalAutopsy.lga_name == lga)
+
     if facility:
         query = query.filter(VerbalAutopsy.facility_name == facility)
+
     if sex:
         query = query.filter(VerbalAutopsy.sex == sex)
+
     if cause:
-        query = query.filter(VerbalAutopsy.cause_of_death == cause)
+        query = query.filter(
+            VerbalAutopsy.cause_of_death == cause
+        )
 
     if year:
         try:
