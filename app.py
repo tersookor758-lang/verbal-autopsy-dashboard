@@ -1,6 +1,9 @@
-"""Application entry point for the Verbal Autopsy Outcome Dashboard."""
+"""
+Application entry point for the Verbal Autopsy Outcome Dashboard.
+"""
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from flask import Flask, jsonify
@@ -10,23 +13,24 @@ from sqlalchemy import text
 from config import Config
 from extensions import db, migrate, login_manager, jwt, limiter
 from models import User
+
 from dashboard import dashboard_bp
 from api import api_bp
-from auth import auth_bp
+from auth import create_auth_blueprint
 from admin import admin_bp
 
 
 def validate_security_config(app):
-    """Validate required security configuration."""
     Config.validate()
+
     if not app.config.get("SECRET_KEY"):
         raise RuntimeError("SECRET_KEY must be configured.")
+
     if not app.config.get("JWT_SECRET_KEY"):
         raise RuntimeError("JWT_SECRET_KEY must be configured.")
 
 
 def create_default_admin():
-    """Create a development administrator if no users exist."""
     if Config.IS_PRODUCTION or User.query.count() > 0:
         return
 
@@ -37,23 +41,17 @@ def create_default_admin():
         is_verified=True,
         is_active=True,
     )
+
     admin.set_password("admin123")
     db.session.add(admin)
     db.session.commit()
 
-    print("=" * 60)
-    print("DEFAULT ADMIN ACCOUNT CREATED")
-    print("Username : admin")
-    print("Password : admin123")
-    print("Role     : admin")
-    print("Active   : True")
-    print("=" * 60)
-    print("IMPORTANT: This account is for development only.")
-    print("=" * 60)
+    print("Default development admin created.")
+    print("Username: admin")
+    print("Password: admin123")
 
 
 def create_app():
-    """Application factory."""
     app = Flask(__name__)
     app.config.from_object(Config)
 
@@ -65,36 +63,41 @@ def create_app():
     jwt.init_app(app)
 
     limiter_kwargs = {}
+
     if Config.RATE_LIMIT_STORAGE_URI:
         limiter_kwargs["storage_uri"] = Config.RATE_LIMIT_STORAGE_URI
+
     limiter.init_app(app, **limiter_kwargs)
 
     CORS(app, origins=Config.CORS_ORIGINS)
 
     import dashboard.routes
-    import auth.routes
     import api.api
     import api.auth
     import api.routes
     import admin.routes
+
+    auth_bp = create_auth_blueprint()
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(admin_bp, url_prefix="/admin")
 
-    @app.route("/health", methods=["GET"])
+    @app.route("/health")
     def health_check():
-        """Return application and database health status."""
         try:
             db.session.execute(text("SELECT 1"))
+
             return jsonify({
                 "status": "healthy",
                 "application": "Verbal Autopsy Outcome Dashboard",
                 "database": "connected",
             }), 200
+
         except Exception:
             db.session.rollback()
+
             return jsonify({
                 "status": "unhealthy",
                 "application": "Verbal Autopsy Outcome Dashboard",
@@ -110,6 +113,7 @@ def create_app():
 
 
 app = create_app()
+
 
 if __name__ == "__main__":
     app.run(
