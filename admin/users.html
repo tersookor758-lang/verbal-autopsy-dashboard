@@ -1,11 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>User Management - Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        rel="stylesheet"
+    >
 </head>
 
 <body class="bg-light">
@@ -13,43 +26,69 @@
 <div class="container-fluid py-4">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
+
         <div>
             <h2 class="fw-bold mb-1">
-                <i class="bi bi-people-fill"></i> User Management
+                <i class="bi bi-people-fill"></i>
+                User Management
             </h2>
+
             <p class="text-muted mb-0">
                 Approve accounts and manage user access and roles.
             </p>
         </div>
 
         <div class="d-flex gap-2">
-            <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-shield-lock"></i> Admin
+
+            <a
+                href="{{ url_for('admin.index') }}"
+                class="btn btn-outline-secondary"
+            >
+                <i class="bi bi-shield-lock"></i>
+                Admin
             </a>
-            <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-primary">
-                <i class="bi bi-speedometer2"></i> Dashboard
+
+            <a
+                href="{{ url_for('dashboard.index') }}"
+                class="btn btn-outline-primary"
+            >
+                <i class="bi bi-speedometer2"></i>
+                Dashboard
             </a>
+
         </div>
+
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
-            <div class="alert alert-{{ category }}" role="alert">
+            <div
+                class="alert alert-{{ category }}"
+                role="alert"
+            >
                 {{ message }}
             </div>
         {% endfor %}
     {% endwith %}
 
     <div class="card shadow-sm border-0">
+
         <div class="card-header bg-white py-3">
-            <h5 class="mb-0">Registered Users</h5>
+            <h5 class="mb-0">
+                Registered Users
+            </h5>
         </div>
 
         <div class="card-body p-0">
+
             {% if users %}
+
             <div class="table-responsive">
+
                 <table class="table table-hover align-middle mb-0">
+
                     <thead class="table-light">
+
                         <tr>
                             <th>User</th>
                             <th>Email</th>
@@ -58,133 +97,256 @@
                             <th>Status</th>
                             <th class="text-end">Actions</th>
                         </tr>
+
                     </thead>
 
                     <tbody>
+
                     {% for user in users %}
+
                         <tr>
+
                             <td>
-                                <strong>{{ user.username }}</strong>
+                                <strong>
+                                    {{ user.username }}
+                                </strong>
+
                                 <br>
-                                <small class="text-muted">ID: {{ user.id }}</small>
+
+                                <small class="text-muted">
+                                    ID: {{ user.id }}
+                                </small>
                             </td>
 
-                            <td>{{ user.email }}</td>
+                            <td>
+                                {{ user.email }}
+                            </td>
 
                             <td>
+
                                 {% if user.role in ["admin", "administrator"] %}
-                                    <span class="badge bg-danger">Admin</span>
+
+                                    <span class="badge bg-danger">
+                                        Admin
+                                    </span>
+
                                 {% elif user.role == "upload_user" %}
-                                    <span class="badge bg-warning text-dark">Upload User</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">User</span>
-                                {% endif %}
-                            </td>
 
-                            <td>
-                                {% if user.is_verified %}
-                                    <span class="badge bg-success">
-                                        <i class="bi bi-check-circle"></i> Verified
-                                    </span>
-                                {% else %}
                                     <span class="badge bg-warning text-dark">
-                                        <i class="bi bi-clock"></i> Pending
+                                        Upload User
                                     </span>
-                                {% endif %}
-                            </td>
 
-                            <td>
-                                {% if user.is_active %}
-                                    <span class="badge bg-success">Active</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactive</span>
+
+                                    <span class="badge bg-secondary">
+                                        User
+                                    </span>
+
                                 {% endif %}
+
                             </td>
 
                             <td>
+
+                                {% if user.is_verified %}
+
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle"></i>
+                                        Verified
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-clock"></i>
+                                        Pending
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if user.is_active %}
+
+                                    <span class="badge bg-success">
+                                        Active
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge bg-secondary">
+                                        Inactive
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
                                 {% if user.id != current_user.id %}
+
                                 <div class="d-flex justify-content-end gap-1 flex-wrap">
 
                                     {% if not user.is_verified %}
-                                    <form method="POST"
-                                          action="{{ url_for('admin.verify_user', user_id=user.id) }}">
-                                        <button class="btn btn-sm btn-success">
-                                            <i class="bi bi-check-lg"></i> Approve
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('admin.verify_user', user_id=user.id) }}"
+                                    >
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-success"
+                                        >
+                                            <i class="bi bi-check-lg"></i>
+                                            Approve
                                         </button>
                                     </form>
+
                                     {% else %}
-                                    <form method="POST"
-                                          action="{{ url_for('admin.unverify_user', user_id=user.id) }}">
-                                        <button class="btn btn-sm btn-outline-warning">
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('admin.unverify_user', user_id=user.id) }}"
+                                    >
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-outline-warning"
+                                        >
                                             Unverify
                                         </button>
                                     </form>
+
                                     {% endif %}
 
                                     {% if user.is_active %}
-                                    <form method="POST"
-                                          action="{{ url_for('admin.deactivate_user', user_id=user.id) }}">
-                                        <button class="btn btn-sm btn-outline-danger">
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('admin.deactivate_user', user_id=user.id) }}"
+                                    >
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-outline-danger"
+                                        >
                                             Deactivate
                                         </button>
                                     </form>
+
                                     {% else %}
-                                    <form method="POST"
-                                          action="{{ url_for('admin.activate_user', user_id=user.id) }}">
-                                        <button class="btn btn-sm btn-outline-success">
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('admin.activate_user', user_id=user.id) }}"
+                                    >
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-outline-success"
+                                        >
                                             Activate
                                         </button>
                                     </form>
+
                                     {% endif %}
 
-                                    <form method="POST"
-                                          action="{{ url_for('admin.change_role', user_id=user.id) }}"
-                                          class="d-flex">
-                                        <select name="role"
-                                                class="form-select form-select-sm"
-                                                onchange="this.form.submit()">
-                                            <option value="user"
-                                                {% if user.role == "user" %}selected{% endif %}>
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('admin.change_role', user_id=user.id) }}"
+                                        class="d-flex"
+                                    >
+
+                                        <select
+                                            name="role"
+                                            class="form-select form-select-sm"
+                                            onchange="this.form.submit()"
+                                            aria-label="Change role for {{ user.username }}"
+                                        >
+
+                                            <option
+                                                value="user"
+                                                {% if user.role == "user" %}
+                                                    selected
+                                                {% endif %}
+                                            >
                                                 User
                                             </option>
-                                            <option value="upload_user"
-                                                {% if user.role == "upload_user" %}selected{% endif %}>
+
+                                            <option
+                                                value="upload_user"
+                                                {% if user.role == "upload_user" %}
+                                                    selected
+                                                {% endif %}
+                                            >
                                                 Upload
                                             </option>
-                                            <option value="admin"
-                                                {% if user.role in ["admin", "administrator"] %}selected{% endif %}>
+
+                                            <option
+                                                value="admin"
+                                                {% if user.role in ["admin", "administrator"] %}
+                                                    selected
+                                                {% endif %}
+                                            >
                                                 Admin
                                             </option>
+
                                         </select>
+
                                     </form>
 
-                                    <form method="POST"
-                                          action="{{ url_for('admin.delete_user', user_id=user.id) }}"
-                                          onsubmit="return confirm('Permanently delete {{ user.username }}?');">
-                                        <button class="btn btn-sm btn-danger">
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('admin.delete_user', user_id=user.id) }}"
+                                        onsubmit="return confirm('Permanently delete this user?');"
+                                    >
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-danger"
+                                            aria-label="Delete {{ user.username }}"
+                                        >
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
 
                                 </div>
+
                                 {% else %}
+
                                     <span class="text-muted small">
                                         Current administrator
                                     </span>
+
                                 {% endif %}
+
                             </td>
+
                         </tr>
+
                     {% endfor %}
+
                     </tbody>
+
                 </table>
+
             </div>
+
             {% else %}
+
                 <div class="p-5 text-center text-muted">
+
                     <i class="bi bi-people fs-1"></i>
-                    <p class="mt-3 mb-0">No registered users found.</p>
+
+                    <p class="mt-3 mb-0">
+                        No registered users found.
+                    </p>
+
                 </div>
+
             {% endif %}
+
         </div>
+
     </div>
 
 </div>
