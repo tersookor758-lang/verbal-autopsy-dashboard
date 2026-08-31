@@ -8,10 +8,17 @@ load_dotenv()
 
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import text
 
 from config import Config
-from extensions import db, migrate, login_manager, jwt, limiter
+from extensions import (
+    db,
+    migrate,
+    login_manager,
+    jwt,
+    limiter,
+)
 from models import User
 
 from dashboard import dashboard_bp
@@ -20,18 +27,28 @@ from auth import create_auth_blueprint
 from admin import admin_bp
 
 
+csrf = CSRFProtect()
+
+
 def validate_security_config(app):
     Config.validate()
 
     if not app.config.get("SECRET_KEY"):
-        raise RuntimeError("SECRET_KEY must be configured.")
+        raise RuntimeError(
+            "SECRET_KEY must be configured."
+        )
 
     if not app.config.get("JWT_SECRET_KEY"):
-        raise RuntimeError("JWT_SECRET_KEY must be configured.")
+        raise RuntimeError(
+            "JWT_SECRET_KEY must be configured."
+        )
 
 
 def create_default_admin():
-    if Config.IS_PRODUCTION or User.query.count() > 0:
+    if (
+        Config.IS_PRODUCTION
+        or User.query.count() > 0
+    ):
         return
 
     admin = User(
@@ -43,6 +60,7 @@ def create_default_admin():
     )
 
     admin.set_password("admin123")
+
     db.session.add(admin)
     db.session.commit()
 
@@ -53,6 +71,7 @@ def create_default_admin():
 
 def create_app():
     app = Flask(__name__)
+
     app.config.from_object(Config)
 
     validate_security_config(app)
@@ -62,14 +81,24 @@ def create_app():
     login_manager.init_app(app)
     jwt.init_app(app)
 
+    csrf.init_app(app)
+
     limiter_kwargs = {}
 
     if Config.RATE_LIMIT_STORAGE_URI:
-        limiter_kwargs["storage_uri"] = Config.RATE_LIMIT_STORAGE_URI
+        limiter_kwargs["storage_uri"] = (
+            Config.RATE_LIMIT_STORAGE_URI
+        )
 
-    limiter.init_app(app, **limiter_kwargs)
+    limiter.init_app(
+        app,
+        **limiter_kwargs,
+    )
 
-    CORS(app, origins=Config.CORS_ORIGINS)
+    CORS(
+        app,
+        origins=Config.CORS_ORIGINS,
+    )
 
     import dashboard.routes
     import api.api
@@ -79,19 +108,39 @@ def create_app():
 
     auth_bp = create_auth_blueprint()
 
-    app.register_blueprint(dashboard_bp)
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(api_bp, url_prefix="/api")
-    app.register_blueprint(admin_bp, url_prefix="/admin")
+    csrf.exempt(api_bp)
+
+    app.register_blueprint(
+        dashboard_bp
+    )
+
+    app.register_blueprint(
+        auth_bp
+    )
+
+    app.register_blueprint(
+        api_bp,
+        url_prefix="/api",
+    )
+
+    app.register_blueprint(
+        admin_bp,
+        url_prefix="/admin",
+    )
 
     @app.route("/health")
     def health_check():
         try:
-            db.session.execute(text("SELECT 1"))
+            db.session.execute(
+                text("SELECT 1")
+            )
 
             return jsonify({
                 "status": "healthy",
-                "application": "Verbal Autopsy Outcome Dashboard",
+                "application": (
+                    "Verbal Autopsy "
+                    "Outcome Dashboard"
+                ),
                 "database": "connected",
             }), 200
 
@@ -100,7 +149,10 @@ def create_app():
 
             return jsonify({
                 "status": "unhealthy",
-                "application": "Verbal Autopsy Outcome Dashboard",
+                "application": (
+                    "Verbal Autopsy "
+                    "Outcome Dashboard"
+                ),
                 "database": "unavailable",
             }), 503
 
