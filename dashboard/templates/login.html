@@ -56,12 +56,16 @@ Login
 
                     <form method="POST">
 
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            value="{{ csrf_token() }}"
+                        >
+
                         <div class="mb-3">
 
                             <label class="form-label">
-
                                 Username
-
                             </label>
 
                             <input
@@ -79,9 +83,7 @@ Login
                         <div class="mb-4">
 
                             <label class="form-label">
-
                                 Password
-
                             </label>
 
                             <div class="input-group">
@@ -134,18 +136,14 @@ Login
                     <div class="text-center mt-4">
 
                         <span class="theme-muted">
-
                             Don't have an account?
-
                         </span>
 
                         <a
                             href="{{ url_for('auth.signup') }}"
                             class="text-decoration-none"
                         >
-
                             Sign Up
-
                         </a>
 
                     </div>
@@ -186,7 +184,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             password.type = "text";
 
-            icon.className = "bi bi-eye-slash";
+            icon.className =
+                "bi bi-eye-slash";
 
             toggle.setAttribute(
                 "aria-label",
@@ -197,7 +196,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             password.type = "password";
 
-            icon.className = "bi bi-eye";
+            icon.className =
+                "bi bi-eye";
 
             toggle.setAttribute(
                 "aria-label",
