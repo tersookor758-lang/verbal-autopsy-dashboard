@@ -3,126 +3,106 @@
 {% block title %}Sign Up{% endblock %}
 
 {% block content %}
-
 <div class="container">
     <div class="row justify-content-center mt-5">
         <div class="col-lg-5 col-md-7 col-sm-10">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
 
-```
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <h2 class="mb-1">Create Account</h2>
+                        <p class="theme-muted mb-0">
+                            Register for the Verbal Autopsy Dashboard
+                        </p>
+                    </div>
 
-                <div class="text-center mb-4">
-                    <h2 class="mb-1">Create Account</h2>
-                    <p class="theme-muted mb-0">
-                        Register for the Verbal Autopsy Dashboard
-                    </p>
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                class="form-control"
+                                required
+                                autofocus
+                                autocomplete="username"
+                            >
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                class="form-control"
+                                required
+                                autocomplete="email"
+                            >
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="form-control"
+                                required
+                                autocomplete="new-password"
+                            >
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="confirm_password" class="form-label">
+                                Confirm Password
+                            </label>
+                            <input
+                                type="password"
+                                id="confirm_password"
+                                name="confirm_password"
+                                class="form-control"
+                                required
+                                autocomplete="new-password"
+                            >
+                        </div>
+
+                        <div class="d-grid">
+                            <button
+                                type="submit"
+                                class="btn btn-primary btn-lg"
+                            >
+                                Create Account
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <span class="theme-muted">
+                            Already have an account?
+                        </span>
+                        <a
+                            href="{{ url_for('auth.login') }}"
+                            class="text-decoration-none"
+                        >
+                            Sign In
+                        </a>
+                    </div>
+
                 </div>
-
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }}">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
-                <form method="POST">
-
-                    <div class="mb-3">
-                        <label for="username" class="form-label">
-                            Username
-                        </label>
-
-                        <input
-                            type="text"
-                            id="username"
-                            name="username"
-                            class="form-control"
-                            required
-                            autofocus
-                            autocomplete="username"
-                        >
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="email" class="form-label">
-                            Email Address
-                        </label>
-
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            class="form-control"
-                            required
-                            autocomplete="email"
-                        >
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="password" class="form-label">
-                            Password
-                        </label>
-
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            class="form-control"
-                            required
-                            autocomplete="new-password"
-                        >
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="confirm_password" class="form-label">
-                            Confirm Password
-                        </label>
-
-                        <input
-                            type="password"
-                            id="confirm_password"
-                            name="confirm_password"
-                            class="form-control"
-                            required
-                            autocomplete="new-password"
-                        >
-                    </div>
-
-                    <div class="d-grid">
-                        <button
-                            type="submit"
-                            class="btn btn-primary btn-lg"
-                        >
-                            Create Account
-                        </button>
-                    </div>
-
-                </form>
-
-                <div class="text-center mt-4">
-                    <span class="theme-muted">
-                        Already have an account?
-                    </span>
-
-                    <a
-                        href="{{ url_for('auth.login') }}"
-                        class="text-decoration-none"
-                    >
-                        Sign In
-                    </a>
-                </div>
-
             </div>
         </div>
-
     </div>
 </div>
-```
-
-</div>
-
 {% endblock %}
