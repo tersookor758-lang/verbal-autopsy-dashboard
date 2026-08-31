@@ -10,10 +10,6 @@ import re
 from extensions import security_logger
 
 
-# ==========================================================
-# Password Validation
-# ==========================================================
-
 class PasswordValidationError(Exception):
     """Raised when a password does not meet security requirements."""
 
@@ -58,20 +54,28 @@ def validate_password_strength(password):
         )
 
     if not re.search(
-        r"[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]",
+        r"""[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/]""",
         password,
     ):
         raise PasswordValidationError(
-            "Password must contain at least one special character "
-            "(!@#$%^&*)."
+            "Password must contain at least one special character."
         )
 
     return True
 
 
-# ==========================================================
-# Security Logging
-# ==========================================================
+def _safe_log_value(value):
+    """Remove control characters before writing values to security logs."""
+
+    if value is None:
+        return "unknown"
+
+    return re.sub(
+        r"[\r\n\t\x00-\x1f\x7f]",
+        " ",
+        str(value),
+    ).strip()
+
 
 def log_failed_login(
     username,
@@ -81,8 +85,10 @@ def log_failed_login(
     """Log a failed login attempt."""
 
     security_logger.warning(
-        f"FAILED_LOGIN | username={username} | "
-        f"ip={ip_address} | reason={reason}"
+        "FAILED_LOGIN | username=%s | ip=%s | reason=%s",
+        _safe_log_value(username),
+        _safe_log_value(ip_address),
+        _safe_log_value(reason),
     )
 
 
@@ -94,8 +100,10 @@ def log_successful_login(
     """Log a successful login."""
 
     security_logger.info(
-        f"SUCCESSFUL_LOGIN | username={username} | "
-        f"user_id={user_id} | ip={ip_address}"
+        "SUCCESSFUL_LOGIN | username=%s | user_id=%s | ip=%s",
+        _safe_log_value(username),
+        _safe_log_value(user_id),
+        _safe_log_value(ip_address),
     )
 
 
@@ -107,8 +115,10 @@ def log_logout(
     """Log a logout event."""
 
     security_logger.info(
-        f"LOGOUT | username={username} | "
-        f"user_id={user_id} | ip={ip_address}"
+        "LOGOUT | username=%s | user_id=%s | ip=%s",
+        _safe_log_value(username),
+        _safe_log_value(user_id),
+        _safe_log_value(ip_address),
     )
 
 
@@ -122,15 +132,19 @@ def log_token_refresh(
 
     if success:
         security_logger.info(
-            f"TOKEN_REFRESH | username={username} | "
-            f"user_id={user_id} | status=SUCCESS"
+            "TOKEN_REFRESH | username=%s | user_id=%s | status=SUCCESS",
+            _safe_log_value(username),
+            _safe_log_value(user_id),
         )
-    else:
-        security_logger.warning(
-            f"TOKEN_REFRESH | username={username} | "
-            f"user_id={user_id} | status=FAILED | "
-            f"reason={reason}"
-        )
+        return
+
+    security_logger.warning(
+        "TOKEN_REFRESH | username=%s | user_id=%s | "
+        "status=FAILED | reason=%s",
+        _safe_log_value(username),
+        _safe_log_value(user_id),
+        _safe_log_value(reason),
+    )
 
 
 def log_unauthorized_access(
@@ -141,8 +155,10 @@ def log_unauthorized_access(
     """Log an unauthorized access attempt."""
 
     security_logger.warning(
-        f"UNAUTHORIZED_ACCESS | endpoint={endpoint} | "
-        f"user={user_info} | ip={ip_address}"
+        "UNAUTHORIZED_ACCESS | endpoint=%s | user=%s | ip=%s",
+        _safe_log_value(endpoint),
+        _safe_log_value(user_info),
+        _safe_log_value(ip_address),
     )
 
 
@@ -157,10 +173,14 @@ def log_forbidden_access(
     """Log a forbidden access attempt."""
 
     security_logger.warning(
-        f"FORBIDDEN_ACCESS | endpoint={endpoint} | "
-        f"username={username} | user_id={user_id} | "
-        f"required_role={required_role} | "
-        f"actual_role={actual_role} | ip={ip_address}"
+        "FORBIDDEN_ACCESS | endpoint=%s | username=%s | "
+        "user_id=%s | required_role=%s | actual_role=%s | ip=%s",
+        _safe_log_value(endpoint),
+        _safe_log_value(username),
+        _safe_log_value(user_id),
+        _safe_log_value(required_role),
+        _safe_log_value(actual_role),
+        _safe_log_value(ip_address),
     )
 
 
@@ -173,9 +193,12 @@ def log_revoked_token_reuse(
     """Log an attempt to reuse a revoked token."""
 
     security_logger.warning(
-        f"REVOKED_TOKEN_REUSE | token_type={token_type} | "
-        f"username={username} | user_id={user_id} | "
-        f"ip={ip_address}"
+        "REVOKED_TOKEN_REUSE | token_type=%s | username=%s | "
+        "user_id=%s | ip=%s",
+        _safe_log_value(token_type),
+        _safe_log_value(username),
+        _safe_log_value(user_id),
+        _safe_log_value(ip_address),
     )
 
 
@@ -193,8 +216,10 @@ def log_rate_limit_exceeded(
     )
 
     security_logger.warning(
-        f"RATE_LIMIT_EXCEEDED | endpoint={endpoint} | "
-        f"user={user_info} | ip={ip_address}"
+        "RATE_LIMIT_EXCEEDED | endpoint=%s | user=%s | ip=%s",
+        _safe_log_value(endpoint),
+        _safe_log_value(user_info),
+        _safe_log_value(ip_address),
     )
 
 
@@ -205,6 +230,7 @@ def log_password_validation_failure(
     """Log a password validation failure."""
 
     security_logger.warning(
-        f"PASSWORD_VALIDATION_FAILED | "
-        f"username={username} | reason={reason}"
+        "PASSWORD_VALIDATION_FAILED | username=%s | reason=%s",
+        _safe_log_value(username),
+        _safe_log_value(reason),
     )
