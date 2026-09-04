@@ -131,6 +131,7 @@ def get_state_analytics(state_name):
         return {
             "state": "",
             "observed_records": 0,
+            "record_percentage": 0,
             "reporting_facilities": 0,
             "reporting_lgas": 0,
             "top_cause": None,
@@ -144,16 +145,27 @@ def get_state_analytics(state_name):
         func.trim(VerbalAutopsy.state_name)
     ) == state_name.lower()
 
+    total_records = VerbalAutopsy.query.count()
+
     observed_records = (
         VerbalAutopsy.query
         .filter(state_filter)
         .count()
     )
 
+    record_percentage = 0
+
+    if total_records > 0:
+        record_percentage = round(
+            (observed_records / total_records) * 100,
+            1
+        )
+
     if observed_records == 0:
         return {
             "state": state_name,
             "observed_records": 0,
+            "record_percentage": record_percentage,
             "reporting_facilities": 0,
             "reporting_lgas": 0,
             "top_cause": None,
@@ -264,6 +276,7 @@ def get_state_analytics(state_name):
     return {
         "state": state_name,
         "observed_records": observed_records,
+        "record_percentage": record_percentage,
         "reporting_facilities": reporting_facilities,
         "reporting_lgas": reporting_lgas,
         "top_cause": top_cause,
