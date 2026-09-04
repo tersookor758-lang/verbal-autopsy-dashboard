@@ -101,6 +101,7 @@ def state_summary():
             {
                 "state": analytics["state"],
                 "observed_records": analytics["observed_records"],
+                "record_percentage": analytics["record_percentage"],
                 "estimated_records": None,
                 "estimated_records_status": (
                     "Not available until a validated "
