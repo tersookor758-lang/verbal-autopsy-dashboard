@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">User Management</h2>
+            <p class="text-muted mb-0">Manage account status and roles.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary">Admin Dashboard</a>
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-primary">Dashboard</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="alert alert-info">
+        <strong>Account access:</strong> New accounts are created as regular users and may access the system while active. Verification status is informational and does not control login access.
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Registered Users</h5>
+        </div>
+
+        <div class="card-body p-0">
+            {% if users %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Verification</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>
+                                <strong>{{ user.username }}</strong><br>
+                                <small class="text-muted">ID: {{ user.id }}</small>
+                                {% if user.username|lower == 'admin' %}
+                                    <br><span class="badge bg-dark">Super Administrator</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.role == 'admin' %}
+                                    <span class="badge bg-danger">Admin</span>
+                                {% elif user.role == 'upload_user' %}
+                                    <span class="badge bg-warning text-dark">Upload User</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">User</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_verified %}
+                                    <span class="badge bg-success">Verified</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Not verified</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.username|lower == 'admin' %}
+                                    <span class="text-muted small">Protected Super Administrator</span>
+                                {% elif user.id == current_user.id %}
+                                    <span class="text-muted small">Current administrator</span>
+                                {% else %}
+                                    <div class="d-flex justify-content-end gap-1 flex-wrap">
+                                        {% if user.is_verified %}
+                                        <form method="POST" action="{{ url_for('admin.unverify_user', user_id=user.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning">Unverify</button>
+                                        </form>
+                                        {% else %}
+                                        <form method="POST" action="{{ url_for('admin.verify_user', user_id=user.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-success">Mark Verified</button>
+                                        </form>
+                                        {% endif %}
+
+                                        {% if user.is_active %}
+                                        <form method="POST" action="{{ url_for('admin.deactivate_user', user_id=user.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+                                        </form>
+                                        {% else %}
+                                        <form method="POST" action="{{ url_for('admin.activate_user', user_id=user.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-success">Activate</button>
+                                        </form>
+                                        {% endif %}
+
+                                        <form method="POST" action="{{ url_for('admin.change_role', user_id=user.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <select name="role" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Change role for {{ user.username }}">
+                                                <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+                                                <option value="upload_user" {% if user.role == 'upload_user' %}selected{% endif %}>Upload User</option>
+                                                {% if current_user.username|lower == 'admin' %}
+                                                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                                                {% endif %}
+                                            </select>
+                                        </form>
+
+                                        <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" onsubmit="return confirm('Permanently delete this user?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="p-5 text-center text-muted">No registered users found.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
