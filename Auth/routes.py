@@ -40,13 +40,17 @@ def login():
                 ip_address,
                 "Missing credentials",
             )
+
             flash(
                 "Username and password are required.",
                 "danger",
             )
+
             return render_template("login.html")
 
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(
+            username=username
+        ).first()
 
         if not user or not user.check_password(password):
             log_failed_login(
@@ -54,10 +58,12 @@ def login():
                 ip_address,
                 "Invalid credentials",
             )
+
             flash(
                 "Invalid username or password.",
                 "danger",
             )
+
             return render_template("login.html")
 
         if not user.is_active:
@@ -66,14 +72,18 @@ def login():
                 ip_address,
                 "Account deactivated",
             )
+
             flash(
                 "Your account has been deactivated. "
                 "Please contact an administrator.",
                 "danger",
             )
+
             return render_template("login.html")
 
-        role = (user.role or "").strip().lower()
+        role = (
+            user.role or ""
+        ).strip().lower()
 
         if role not in VALID_ROLES:
             log_failed_login(
@@ -81,11 +91,13 @@ def login():
                 ip_address,
                 "Invalid account role",
             )
+
             flash(
                 "Your account has an invalid role. "
                 "Please contact an administrator.",
                 "danger",
             )
+
             return render_template("login.html")
 
         login_user(user)
@@ -96,57 +108,100 @@ def login():
             user.id,
         )
 
-        flash("Login successful.", "success")
+        flash(
+            "Login successful.",
+            "success",
+        )
 
-        return redirect(url_for("dashboard.index"))
+        return redirect(
+            url_for("dashboard.index")
+        )
 
     return render_template("login.html")
 
 
 def signup():
     if current_user.is_authenticated:
-        return redirect(url_for("dashboard.index"))
+        return redirect(
+            url_for("dashboard.index")
+        )
 
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-        confirm_password = request.form.get("confirm_password", "")
+        username = request.form.get(
+            "username",
+            "",
+        ).strip()
+
+        email = request.form.get(
+            "email",
+            "",
+        ).strip().lower()
+
+        password = request.form.get(
+            "password",
+            "",
+        )
+
+        confirm_password = request.form.get(
+            "confirm_password",
+            "",
+        )
 
         if not username or not email or not password:
             flash(
                 "All required fields must be completed.",
                 "danger",
             )
-            return render_template("signup.html")
+
+            return render_template(
+                "signup.html"
+            )
 
         if username.lower() == RESERVED_USERNAME:
             flash(
                 "That username is reserved.",
                 "danger",
             )
-            return render_template("signup.html")
+
+            return render_template(
+                "signup.html"
+            )
 
         if password != confirm_password:
             flash(
                 "Passwords do not match.",
                 "danger",
             )
-            return render_template("signup.html")
 
-        if User.query.filter_by(username=username).first():
+            return render_template(
+                "signup.html"
+            )
+
+        if User.query.filter_by(
+            username=username
+        ).first():
+
             flash(
                 "That username is already in use.",
                 "danger",
             )
-            return render_template("signup.html")
 
-        if User.query.filter_by(email=email).first():
+            return render_template(
+                "signup.html"
+            )
+
+        if User.query.filter_by(
+            email=email
+        ).first():
+
             flash(
                 "That email address is already registered.",
                 "danger",
             )
-            return render_template("signup.html")
+
+            return render_template(
+                "signup.html"
+            )
 
         user = User(
             username=username,
@@ -167,29 +222,52 @@ def signup():
 
         except PasswordValidationError as error:
             db.session.rollback()
-            flash(str(error), "danger")
-            return render_template("signup.html")
+
+            flash(
+                str(error),
+                "danger",
+            )
+
+            return render_template(
+                "signup.html"
+            )
 
         except Exception:
             db.session.rollback()
+
             flash(
-                "Registration could not be completed. Please try again.",
+                "Registration could not be completed. "
+                "Please try again.",
                 "danger",
             )
-            return render_template("signup.html")
+
+            return render_template(
+                "signup.html"
+            )
 
         flash(
             "Registration successful. You can now sign in.",
             "success",
         )
 
-        return redirect(url_for("auth.login"))
+        return redirect(
+            url_for("auth.login")
+        )
 
-    return render_template("signup.html")
+    return render_template(
+        "signup.html"
+    )
 
 
 @login_required
 def logout():
+    """
+    Log the current browser user out.
+
+    This route intentionally accepts POST only.
+    Flask-WTF CSRF protection applies to the request.
+    """
+
     username = current_user.username
     user_id = current_user.id
     ip_address = request.remote_addr
@@ -207,7 +285,9 @@ def logout():
         "info",
     )
 
-    return redirect(url_for("auth.login"))
+    return redirect(
+        url_for("auth.login")
+    )
 
 
 @limiter.limit("5 per minute")
@@ -239,5 +319,5 @@ def register_auth_routes(auth_bp):
         "/logout",
         endpoint="logout",
         view_func=logout,
-        methods=["GET"],
+        methods=["POST"],
     )
