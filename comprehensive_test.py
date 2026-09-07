@@ -1,202 +1,476 @@
 #!/usr/bin/env python3
+"""Deployment-readiness regression tests for the Verbal Autopsy Dashboard.
+
+The suite is intentionally self-contained and uses a temporary SQLite database.
+It does not contact the production database and does not depend on hard-coded
+administrator credentials.
+
+Run with:
+    APP_ENV=testing pytest comprehensive_test.py -q
+
+On Windows PowerShell:
+    $env:APP_ENV="testing"; pytest comprehensive_test.py -q
 """
-Comprehensive security test for Priority 1 and 2 fixes.
-Tests all critical security improvements.
-"""
-import requests
-import json
 
-base = 'http://localhost:5001'
+import os
+from pathlib import Path
 
-print("\n" + "="*80)
-print("COMPREHENSIVE SECURITY TEST SUITE")
-print("Priority 1 & 2 Security Fixes Verification")
-print("="*80)
+import pytest
 
-tests_passed = 0
-tests_total = 0
+# The application configuration is evaluated when config.py is imported, so the
+# test environment must be selected before importing the application.
+os.environ.setdefault("APP_ENV", "testing")
+os.environ.setdefault("SECRET_KEY", "test-secret-key")
+os.environ.setdefault("JWT_SECRET_KEY", "test-jwt-secret-key")
+os.environ.setdefault("CORS_ORIGINS", "http://localhost:3000")
+os.environ.setdefault("RATE_LIMIT_STORAGE_URI", "memory://")
+os.environ.pop("USE_MYSQL", None)
+os.environ.pop("DATABASE_URL", None)
 
-def test(name, condition, details=""):
-    global tests_passed, tests_total
-    tests_total += 1
-    status = "PASS" if condition else "FAIL"
-    print(f"\n{tests_total}. {name}")
-    print(f"   [{status}]")
-    if details:
-        print(f"   {details}")
-    if condition:
-        tests_passed += 1
+from app import create_app
+from extensions import db
+from models import RefreshToken, User, VerbalAutopsy
 
-# ========== TEST 1: JWT Authentication Required ==========
-print("\n" + "-"*80)
-print("TEST GROUP 1: JWT Authentication Protection")
-print("-"*80)
 
-# Test without token
-r = requests.get(f'{base}/api/auth/me')
-test("GET /api/auth/me without token returns 401",
-     r.status_code == 401,
-     f"Status: {r.status_code}, Message: {r.json().get('message')}")
+@pytest.fixture()
+def app(tmp_path: Path):
+    """Create an isolated application backed by a temporary SQLite database."""
 
-r = requests.get(f'{base}/api/verbal-autopsy/')
-test("GET /api/verbal-autopsy/ without token returns 401",
-     r.status_code == 401)
+    application = create_app()
+    database_path = tmp_path / "regression.db"
 
-# ========== TEST 2: Login and Token Generation ==========
-print("\n" + "-"*80)
-print("TEST GROUP 2: Authentication & Token Generation")
-print("-"*80)
+    application.config.update(
+        TESTING=True,
+        SQLALCHEMY_DATABASE_URI=f"sqlite:///{database_path}",
+        WTF_CSRF_ENABLED=True,
+        RATELIMIT_ENABLED=False,
+    )
 
-r = requests.post(f'{base}/api/auth/login', json={'username':'admin','password':'admin123'})
-login_data = r.json()
-access_token = login_data.get('access_token')
-refresh_token = login_data.get('refresh_token')
+    # The extension was already initialized by create_app(). Rebind it for the
+    # isolated test application before creating the schema.
+    with application.app_context():
+        db.session.remove()
+        db.drop_all()
+        db.create_all()
 
-test("POST /api/auth/login returns 200",
-     r.status_code == 200)
-test("Login response includes access_token",
-     'access_token' in login_data)
-test("Login response includes refresh_token",
-     'refresh_token' in login_data)
-test("Login response includes user data",
-     'user' in login_data and login_data['user'].get('role') == 'Administrator')
+    yield application
 
-# ========== TEST 3: Authenticated Access ==========
-print("\n" + "-"*80)
-print("TEST GROUP 3: Authenticated Access with JWT")
-print("-"*80)
+    with application.app_context():
+        db.session.remove()
+        db.drop_all()
 
-headers = {'Authorization': f'Bearer {access_token}'}
-r = requests.get(f'{base}/api/auth/me', headers=headers)
-test("GET /api/auth/me with valid token returns 200",
-     r.status_code == 200,
-     f"User: {r.json().get('username')} (Role: {r.json().get('role')})")
 
-r = requests.get(f'{base}/api/verbal-autopsy/', headers=headers)
-test("GET /api/verbal-autopsy/ with valid token returns 200",
-     r.status_code == 200)
+def create_user(username, role="user", active=True, verified=False):
+    user = User(
+        username=username,
+        email=f"{username}@example.test",
+        role=role,
+        is_active=active,
+        is_verified=verified,
+    )
+    user.set_password("Strong-Test-Password-123!")
+    db.session.add(user)
+    db.session.commit()
+    return user
 
-r = requests.get(f'{base}/api/verbal-autopsy/locations', headers=headers)
-test("GET /api/verbal-autopsy/locations with valid token returns 200",
-     r.status_code == 200,
-     f"Response keys: {list(r.json().keys())}")
 
-# ========== TEST 4: RBAC - Role-Based Access Control ==========
-print("\n" + "-"*80)
-print("TEST GROUP 4: Role-Based Access Control (RBAC)")
-print("-"*80)
+def api_login(client, username, password="Strong-Test-Password-123!"):
+    response = client.post(
+        "/api/auth/login",
+        json={"username": username, "password": password},
+    )
+    assert response.status_code == 200, response.get_json()
+    return response.get_json()
 
-# Create test users if needed
-admin_data = requests.post(f'{base}/api/auth/login', json={'username':'admin','password':'admin123'}).json()
-admin_token = admin_data['access_token']
-admin_headers = {'Authorization': f'Bearer {admin_token}'}
 
-viewer_data = requests.post(f'{base}/api/auth/login', json={'username':'testviewer','password':'viewer123'}).json()
-viewer_token = viewer_data['access_token']
-viewer_headers = {'Authorization': f'Bearer {viewer_token}'}
+def bearer(token):
+    return {"Authorization": f"Bearer {token}"}
 
-# Test Viewer permissions
-r = requests.get(f'{base}/api/verbal-autopsy/', headers=viewer_headers)
-test("Viewer: Can GET /api/verbal-autopsy/",
-     r.status_code == 200)
 
-r = requests.put(f'{base}/api/verbal-autopsy/test123',
-                 json={'state_name': 'Lagos'},
-                 headers=viewer_headers)
-test("Viewer: Cannot PUT /api/verbal-autopsy/ (returns 403)",
-     r.status_code == 403,
-     f"Response: {r.json().get('message')}")
+# ---------------------------------------------------------------------------
+# Application and configuration
+# ---------------------------------------------------------------------------
 
-r = requests.delete(f'{base}/api/verbal-autopsy/test123',
-                   headers=viewer_headers)
-test("Viewer: Cannot DELETE /api/verbal-autopsy/ (returns 403)",
-     r.status_code == 403)
+def test_health_endpoint_and_swagger(app):
+    client = app.test_client()
 
-# Test Admin permissions
-r = requests.put(f'{base}/api/verbal-autopsy/test123',
-                 json={'state_name': 'Lagos'},
-                 headers=admin_headers)
-test("Admin: Can attempt PUT (returns 404 for non-existent record)",
-     r.status_code in [404, 200],
-     f"Status: {r.status_code}")
+    health = client.get("/health")
+    assert health.status_code == 200
+    assert health.get_json()["status"] == "healthy"
 
-# ========== TEST 5: Database Role Verification ==========
-print("\n" + "-"*80)
-print("TEST GROUP 5: Database Role Verification (Current Role)")
-print("-"*80)
+    swagger = client.get("/swagger")
+    assert swagger.status_code == 200
 
-r = requests.get(f'{base}/api/auth/me', headers=admin_headers)
-admin_info = r.json()
-test("Admin user's current role fetched from database",
-     admin_info.get('role') == 'Administrator',
-     f"Role: {admin_info.get('role')}")
 
-# ========== TEST 6: PUT Mass-Assignment Protection ==========
-print("\n" + "-"*80)
-print("TEST GROUP 6: PUT Mass-Assignment Vulnerability Fix")
-print("-"*80)
+def test_testing_database_is_isolated(app):
+    with app.app_context():
+        assert db.engine.url.get_backend_name() == "sqlite"
+        assert User.query.count() == 0
+        assert VerbalAutopsy.query.count() == 0
 
-# Try to update with protected fields (should be ignored)
-payload = {
-    'state_name': 'Lagos',
-    'patientid': 'MALICIOUS_CHANGE',  # This should be rejected
-    'datim_code': 'MALICIOUS_CHANGE'   # This should be rejected
-}
-r = requests.put(f'{base}/api/verbal-autopsy/test123',
-                 json=payload,
-                 headers=admin_headers)
-# It returns 404 for non-existent record, but the important thing is
-# that it tries to update safely (with field whitelist)
-test("PUT endpoint accepts only whitelisted fields",
-     r.status_code in [404, 200],
-     "Mass-assignment prevented via whitelist in code")
 
-# ========== TEST 7: Production Security Settings ==========
-print("\n" + "-"*80)
-print("TEST GROUP 7: Production Security Configuration")
-print("-"*80)
+# ---------------------------------------------------------------------------
+# Account workflow
+# ---------------------------------------------------------------------------
 
-# We can't directly test these without inspecting the app config,
-# but we can verify they don't break the app
-test("App runs with production security settings configured",
-     True,
-     "SESSION_COOKIE_SECURE, SESSION_COOKIE_HTTPONLY configured")
+def test_signup_creates_active_regular_user(app):
+    client = app.test_client()
 
-# ========== TEST 8: Swagger Documentation ==========
-print("\n" + "-"*80)
-print("TEST GROUP 8: Swagger API Documentation")
-print("-"*80)
+    response = client.post(
+        "/signup",
+        data={
+            "username": "newuser",
+            "email": "newuser@example.test",
+            "password": "Strong-Test-Password-123!",
+            "confirm_password": "Strong-Test-Password-123!",
+        },
+        follow_redirects=False,
+    )
 
-r = requests.get(f'{base}/swagger')
-test("Swagger UI is accessible at /swagger",
-     r.status_code == 200)
+    assert response.status_code in {200, 302, 303}
 
-r = requests.get(f'{base}/swagger.json')
-test("Swagger JSON spec is accessible",
-     r.status_code == 200 or r.status_code == 404,
-     "API documentation configured")
+    with app.app_context():
+        user = User.query.filter_by(username="newuser").first()
+        assert user is not None
+        assert user.role == "user"
+        assert user.is_active is True
+        assert user.is_verified is False
 
-# ========== FINAL SUMMARY ==========
-print("\n" + "="*80)
-print("TEST SUMMARY")
-print("="*80)
-print(f"Total Tests: {tests_total}")
-print(f"Tests Passed: {tests_passed}")
-print(f"Tests Failed: {tests_total - tests_passed}")
-print(f"Success Rate: {(tests_passed/tests_total)*100:.1f}%")
-print("="*80)
 
-if tests_passed == tests_total:
-    print("\nALL SECURITY TESTS PASSED!")
-    print("\nVerified Fixes:")
-    print("  1. [OK] JWT authentication enforced on all data endpoints")
-    print("  2. [OK] Role-Based Access Control (RBAC) implemented")
-    print("  3. [OK] Database role verification on each request")
-    print("  4. [OK] PUT mass-assignment vulnerability fixed")
-    print("  5. [OK] Hard-coded admin disabled in production")
-    print("  6. [OK] Production security cookies configured")
-    print("  7. [OK] Database rollback handling added")
-    print("  8. [OK] Swagger Bearer JWT configuration")
-    print("\n" + "="*80)
-else:
-    print(f"\n{tests_total - tests_passed} test(s) failed")
+def test_unverified_active_user_can_use_api(app):
+    with app.app_context():
+        create_user("active_unverified", verified=False)
+
+    client = app.test_client()
+    data = api_login(client, "active_unverified")
+
+    assert data["user"]["role"] == "user"
+    assert data["user"]["is_verified"] is False
+    assert data["user"]["is_active"] is True
+
+
+def test_inactive_user_cannot_login(app):
+    with app.app_context():
+        create_user("inactive", active=False, verified=True)
+
+    client = app.test_client()
+    response = client.post(
+        "/api/auth/login",
+        json={
+            "username": "inactive",
+            "password": "Strong-Test-Password-123!",
+        },
+    )
+
+    assert response.status_code == 403
+
+
+def test_refresh_requires_active_account(app):
+    with app.app_context():
+        user = create_user("refreshuser", verified=False)
+
+    client = app.test_client()
+    login = api_login(client, "refreshuser")
+    refresh_token = login["refresh_token"]
+
+    response = client.post(
+        "/api/auth/refresh",
+        json={"refresh_token": refresh_token},
+    )
+    assert response.status_code == 200
+
+    with app.app_context():
+        user = db.session.get(User, user.id)
+        user.is_active = False
+        db.session.commit()
+
+    response = client.post(
+        "/api/auth/refresh",
+        json={"refresh_token": response.get_json()["refresh_token"]},
+    )
+    assert response.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# JWT protection and current database authorization
+# ---------------------------------------------------------------------------
+
+def test_protected_endpoints_require_bearer_token(app):
+    client = app.test_client()
+
+    assert client.get("/api/auth/me").status_code == 401
+    assert client.get("/api/verbal-autopsy/").status_code == 401
+
+
+def test_current_database_role_controls_existing_access_token(app):
+    with app.app_context():
+        user = create_user("roleuser", role="user")
+
+    client = app.test_client()
+    login = api_login(client, "roleuser")
+    token = login["access_token"]
+
+    response = client.get("/api/auth/me", headers=bearer(token))
+    assert response.status_code == 200
+    assert response.get_json()["role"] == "user"
+
+    with app.app_context():
+        user = db.session.get(User, user.id)
+        user.role = "upload_user"
+        db.session.commit()
+
+    response = client.get("/api/auth/me", headers=bearer(token))
+    assert response.status_code == 200
+    assert response.get_json()["role"] == "upload_user"
+
+
+def test_existing_access_token_is_denied_after_deactivation(app):
+    with app.app_context():
+        user = create_user("revokeduser")
+
+    client = app.test_client()
+    login = api_login(client, "revokeduser")
+    token = login["access_token"]
+
+    with app.app_context():
+        user = db.session.get(User, user.id)
+        user.is_active = False
+        db.session.commit()
+
+    response = client.get("/api/auth/me", headers=bearer(token))
+    assert response.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Role capabilities
+# ---------------------------------------------------------------------------
+
+def test_role_capabilities_match_project_policy(app):
+    with app.app_context():
+        regular = create_user("regular", role="user")
+        uploader = create_user("uploader", role="upload_user")
+        administrator = create_user("administrator", role="admin")
+
+        assert regular.can_access_dashboard() is True
+        assert regular.can_download() is True
+        assert regular.can_upload() is False
+        assert regular.can_edit() is False
+        assert regular.can_delete() is False
+        assert regular.can_manage_users() is False
+
+        assert uploader.can_access_dashboard() is True
+        assert uploader.can_download() is True
+        assert uploader.can_upload() is True
+        assert uploader.can_edit() is False
+        assert uploader.can_delete() is False
+        assert uploader.can_manage_users() is False
+
+        assert administrator.can_access_dashboard() is True
+        assert administrator.can_download() is True
+        assert administrator.can_upload() is True
+        assert administrator.can_edit() is True
+        assert administrator.can_delete() is True
+        assert administrator.can_manage_users() is True
+
+
+def test_all_authenticated_roles_can_read_records(app):
+    with app.app_context():
+        record = VerbalAutopsy(
+            patientid="TEST-PATIENT-001",
+            datim_code="TEST-DATIM-001",
+            state_name="Lagos",
+            lga_name="Ikeja",
+            facility_name="Test Facility",
+        )
+        db.session.add(record)
+        create_user("regular", role="user")
+        create_user("uploader", role="upload_user")
+        create_user("administrator", role="admin")
+        db.session.commit()
+
+    client = app.test_client()
+
+    for username in ("regular", "uploader", "administrator"):
+        login = api_login(client, username)
+        response = client.get(
+            "/api/verbal-autopsy/",
+            headers=bearer(login["access_token"]),
+        )
+        assert response.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Refresh-token rotation and storage
+# ---------------------------------------------------------------------------
+
+def test_refresh_token_rotation_revokes_old_token(app):
+    with app.app_context():
+        create_user("rotator")
+
+    client = app.test_client()
+    login = api_login(client, "rotator")
+    first_refresh = login["refresh_token"]
+
+    refreshed = client.post(
+        "/api/auth/refresh",
+        json={"refresh_token": first_refresh},
+    )
+    assert refreshed.status_code == 200
+
+    second_refresh = refreshed.get_json()["refresh_token"]
+    assert second_refresh != first_refresh
+
+    reused = client.post(
+        "/api/auth/refresh",
+        json={"refresh_token": first_refresh},
+    )
+    assert reused.status_code == 401
+
+    with app.app_context():
+        tokens = RefreshToken.query.all()
+        assert len(tokens) == 2
+        assert sum(token.revoked for token in tokens) == 1
+
+
+def test_refresh_tokens_are_stored_as_hashes_not_raw_values(app):
+    with app.app_context():
+        create_user("hashtest")
+
+    client = app.test_client()
+    login = api_login(client, "hashtest")
+    raw_refresh = login["refresh_token"]
+
+    with app.app_context():
+        token = RefreshToken.query.first()
+        assert token is not None
+        assert token.token_hash != raw_refresh
+        assert len(token.token_hash) == 64
+
+
+# ---------------------------------------------------------------------------
+# Record mutation authorization
+# ---------------------------------------------------------------------------
+
+def test_regular_user_cannot_modify_or_delete_records(app):
+    with app.app_context():
+        record = VerbalAutopsy(
+            patientid="TEST-PATIENT-USER",
+            datim_code="TEST-DATIM-USER",
+        )
+        db.session.add(record)
+        create_user("regular", role="user")
+        db.session.commit()
+        record_id = record.id
+
+    client = app.test_client()
+    login = api_login(client, "regular")
+    headers = bearer(login["access_token"])
+
+    put_response = client.put(
+        f"/api/verbal-autopsy/{record_id}",
+        json={"state_name": "Lagos"},
+        headers=headers,
+    )
+    assert put_response.status_code == 403
+
+    delete_response = client.delete(
+        f"/api/verbal-autopsy/{record_id}",
+        headers=headers,
+    )
+    assert delete_response.status_code == 403
+
+
+def test_upload_user_cannot_modify_or_delete_records(app):
+    with app.app_context():
+        record = VerbalAutopsy(
+            patientid="TEST-PATIENT-UPLOADER",
+            datim_code="TEST-DATIM-UPLOADER",
+        )
+        db.session.add(record)
+        create_user("uploader", role="upload_user")
+        db.session.commit()
+        record_id = record.id
+
+    client = app.test_client()
+    login = api_login(client, "uploader")
+    headers = bearer(login["access_token"])
+
+    assert client.put(
+        f"/api/verbal-autopsy/{record_id}",
+        json={"state_name": "Lagos"},
+        headers=headers,
+    ).status_code == 403
+
+    assert client.delete(
+        f"/api/verbal-autopsy/{record_id}",
+        headers=headers,
+    ).status_code == 403
+
+
+def test_admin_can_modify_record(app):
+    with app.app_context():
+        record = VerbalAutopsy(
+            patientid="TEST-PATIENT-ADMIN",
+            datim_code="TEST-DATIM-ADMIN",
+        )
+        db.session.add(record)
+        create_user("administrator", role="admin")
+        db.session.commit()
+        record_id = record.id
+
+    client = app.test_client()
+    login = api_login(client, "administrator")
+    headers = bearer(login["access_token"])
+
+    response = client.put(
+        f"/api/verbal-autopsy/{record_id}",
+        json={"state_name": "Lagos", "patientid": "MALICIOUS-ID"},
+        headers=headers,
+    )
+    assert response.status_code == 200
+
+    with app.app_context():
+        record = db.session.get(VerbalAutopsy, record_id)
+        assert record.state_name == "Lagos"
+        # patientid is a protected identifier and must not be overwritten.
+        assert record.patientid == "TEST-PATIENT-ADMIN"
+
+
+# ---------------------------------------------------------------------------
+# Final smoke assertions
+# ---------------------------------------------------------------------------
+
+def test_invalid_credentials_are_rejected(app):
+    with app.app_context():
+        create_user("credentialtest")
+
+    client = app.test_client()
+    response = client.post(
+        "/api/auth/login",
+        json={
+            "username": "credentialtest",
+            "password": "wrong-password",
+        },
+    )
+    assert response.status_code == 401
+
+
+def test_refresh_and_logout_endpoints_exist(app):
+    with app.app_context():
+        create_user("logouttest")
+
+    client = app.test_client()
+    login = api_login(client, "logouttest")
+    refresh_token = login["refresh_token"]
+
+    logout = client.post(
+        "/api/auth/logout",
+        json={"refresh_token": refresh_token},
+    )
+    assert logout.status_code == 200
+
+    reused = client.post(
+        "/api/auth/refresh",
+        json={"refresh_token": refresh_token},
+    )
+    assert reused.status_code == 401
