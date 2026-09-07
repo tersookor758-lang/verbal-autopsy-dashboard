@@ -54,6 +54,7 @@ def admin_required():
             "Your account has been deactivated.",
             "danger",
         )
+
         return redirect(
             url_for("dashboard.index")
         )
@@ -67,6 +68,7 @@ def admin_required():
             "You do not have permission to access the administrator area.",
             "danger",
         )
+
         return redirect(
             url_for("dashboard.index")
         )
@@ -81,10 +83,12 @@ def protected_target(user):
     """
 
     if is_super_admin(user):
+
         flash(
             "The Super Administrator account cannot be modified.",
             "danger",
         )
+
         return True
 
     return False
@@ -92,9 +96,11 @@ def protected_target(user):
 
 @admin_bp.after_request
 def prevent_admin_cache(response):
+
     response.headers["Cache-Control"] = (
         "no-store, no-cache, must-revalidate, max-age=0"
     )
+
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
 
@@ -104,6 +110,7 @@ def prevent_admin_cache(response):
 @admin_bp.route("/")
 @login_required
 def index():
+
     access = admin_required()
 
     if access is not True:
@@ -111,26 +118,33 @@ def index():
 
     stats = {
         "total_users": User.query.count(),
+
         "verified_users": User.query.filter_by(
             is_verified=True
         ).count(),
+
         "pending_users": User.query.filter_by(
             is_verified=False
         ).count(),
+
         "active_users": User.query.filter_by(
             is_active=True
         ).count(),
+
         "inactive_users": User.query.filter_by(
             is_active=False
         ).count(),
+
         "admin_users": User.query.filter(
             User.role.in_(
                 ["admin", "administrator"]
             )
         ).count(),
+
         "regular_users": User.query.filter_by(
             role="user"
         ).count(),
+
         "upload_users": User.query.filter_by(
             role="upload_user"
         ).count(),
@@ -153,6 +167,7 @@ def index():
 @admin_bp.route("/users")
 @login_required
 def users():
+
     access = admin_required()
 
     if access is not True:
@@ -176,12 +191,15 @@ def users():
 )
 @login_required
 def verify_user(user_id):
+
     access = admin_required()
 
     if access is not True:
         return access
 
-    user = User.query.get_or_404(user_id)
+    user = User.query.get_or_404(
+        user_id
+    )
 
     if protected_target(user):
         return redirect(
@@ -189,11 +207,13 @@ def verify_user(user_id):
         )
 
     try:
+
         user.is_verified = True
 
         db.session.commit()
 
     except Exception:
+
         db.session.rollback()
 
         flash(
@@ -221,14 +241,18 @@ def verify_user(user_id):
 )
 @login_required
 def unverify_user(user_id):
+
     access = admin_required()
 
     if access is not True:
         return access
 
-    user = User.query.get_or_404(user_id)
+    user = User.query.get_or_404(
+        user_id
+    )
 
     if user.id == current_user.id:
+
         flash(
             "You cannot change your own verification status.",
             "danger",
@@ -244,11 +268,13 @@ def unverify_user(user_id):
         )
 
     try:
+
         user.is_verified = False
 
         db.session.commit()
 
     except Exception:
+
         db.session.rollback()
 
         flash(
@@ -276,12 +302,15 @@ def unverify_user(user_id):
 )
 @login_required
 def activate_user(user_id):
+
     access = admin_required()
 
     if access is not True:
         return access
 
-    user = User.query.get_or_404(user_id)
+    user = User.query.get_or_404(
+        user_id
+    )
 
     if protected_target(user):
         return redirect(
@@ -289,11 +318,13 @@ def activate_user(user_id):
         )
 
     try:
+
         user.is_active = True
 
         db.session.commit()
 
     except Exception:
+
         db.session.rollback()
 
         flash(
@@ -321,14 +352,18 @@ def activate_user(user_id):
 )
 @login_required
 def deactivate_user(user_id):
+
     access = admin_required()
 
     if access is not True:
         return access
 
-    user = User.query.get_or_404(user_id)
+    user = User.query.get_or_404(
+        user_id
+    )
 
     if user.id == current_user.id:
+
         flash(
             "You cannot deactivate your own account.",
             "danger",
@@ -344,11 +379,13 @@ def deactivate_user(user_id):
         )
 
     try:
+
         user.is_active = False
 
         db.session.commit()
 
     except Exception:
+
         db.session.rollback()
 
         flash(
@@ -376,12 +413,15 @@ def deactivate_user(user_id):
 )
 @login_required
 def change_role(user_id):
+
     access = admin_required()
 
     if access is not True:
         return access
 
-    user = User.query.get_or_404(user_id)
+    user = User.query.get_or_404(
+        user_id
+    )
 
     new_role = (
         request.form.get(
@@ -393,6 +433,7 @@ def change_role(user_id):
     )
 
     if user.id == current_user.id:
+
         flash(
             "You cannot change your own administrator role.",
             "danger",
@@ -408,6 +449,7 @@ def change_role(user_id):
         )
 
     if new_role not in VALID_ROLES:
+
         flash(
             "Invalid user role.",
             "danger",
@@ -417,12 +459,43 @@ def change_role(user_id):
             url_for("admin.users")
         )
 
+    # ======================================================
+    # SUPER ADMIN ROLE PROTECTION
+    # ======================================================
+    #
+    # Only the permanent Super Administrator can grant
+    # another account the "admin" role.
+    #
+    # Normal administrators can still:
+    #   - change user -> upload_user
+    #   - change upload_user -> user
+    #   - demote another admin
+    #   - manage other administrators
+    #
+    # They simply cannot create another administrator.
+    # ======================================================
+
+    if new_role == "admin" and not is_super_admin(
+        current_user
+    ):
+
+        flash(
+            "Only the Super Administrator can grant the administrator role.",
+            "danger",
+        )
+
+        return redirect(
+            url_for("admin.users")
+        )
+
     try:
+
         user.role = new_role
 
         db.session.commit()
 
     except Exception:
+
         db.session.rollback()
 
         flash(
@@ -450,14 +523,18 @@ def change_role(user_id):
 )
 @login_required
 def delete_user(user_id):
+
     access = admin_required()
 
     if access is not True:
         return access
 
-    user = User.query.get_or_404(user_id)
+    user = User.query.get_or_404(
+        user_id
+    )
 
     if user.id == current_user.id:
+
         flash(
             "You cannot delete your own account.",
             "danger",
@@ -475,10 +552,15 @@ def delete_user(user_id):
     username = user.username
 
     try:
-        db.session.delete(user)
+
+        db.session.delete(
+            user
+        )
+
         db.session.commit()
 
     except Exception:
+
         db.session.rollback()
 
         flash(
