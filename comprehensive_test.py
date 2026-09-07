@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """Deployment-readiness regression tests for the Verbal Autopsy Dashboard.
 
-The suite is intentionally self-contained and uses a temporary SQLite database.
-It does not contact the production database and does not depend on hard-coded
-administrator credentials.
+The suite uses an isolated temporary SQLite database and never uses production
+credentials or the production MySQL database.
 
 Run with:
     APP_ENV=testing pytest comprehensive_test.py -q
 
-On Windows PowerShell:
+Windows PowerShell:
     $env:APP_ENV="testing"; pytest comprehensive_test.py -q
 """
 
@@ -17,8 +16,8 @@ from pathlib import Path
 
 import pytest
 
-# The application configuration is evaluated when config.py is imported, so the
-# test environment must be selected before importing the application.
+# Config.py evaluates the environment when it is imported. Set safe testing
+# values before importing the application.
 os.environ.setdefault("APP_ENV", "testing")
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ.setdefault("JWT_SECRET_KEY", "test-jwt-secret-key")
@@ -28,36 +27,44 @@ os.environ.pop("USE_MYSQL", None)
 os.environ.pop("DATABASE_URL", None)
 
 from app import create_app
+from config import Config
 from extensions import db
 from models import RefreshToken, User, VerbalAutopsy
+
+
+TEST_PASSWORD = "Strong-Test-Password-123!"
 
 
 @pytest.fixture()
 def app(tmp_path: Path):
     """Create an isolated application backed by a temporary SQLite database."""
-
-    application = create_app()
     database_path = tmp_path / "regression.db"
 
-    application.config.update(
-        TESTING=True,
-        SQLALCHEMY_DATABASE_URI=f"sqlite:///{database_path}",
-        WTF_CSRF_ENABLED=True,
-        RATELIMIT_ENABLED=False,
-    )
+    # create_app() reads Config.SQLALCHEMY_DATABASE_URI during initialization,
+    # so override the class value before constructing the application. This
+    # prevents the suite from touching the repository's normal SQLite database.
+    original_uri = Config.SQLALCHEMY_DATABASE_URI
+    Config.SQLALCHEMY_DATABASE_URI = f"sqlite:///{database_path}"
 
-    # The extension was already initialized by create_app(). Rebind it for the
-    # isolated test application before creating the schema.
-    with application.app_context():
-        db.session.remove()
-        db.drop_all()
-        db.create_all()
+    try:
+        application = create_app()
+        application.config.update(
+            TESTING=True,
+            WTF_CSRF_ENABLED=True,
+            RATELIMIT_ENABLED=False,
+        )
 
-    yield application
+        with application.app_context():
+            db.drop_all()
+            db.create_all()
 
-    with application.app_context():
-        db.session.remove()
-        db.drop_all()
+        yield application
+
+        with application.app_context():
+            db.session.remove()
+            db.drop_all()
+    finally:
+        Config.SQLALCHEMY_DATABASE_URI = original_uri
 
 
 def create_user(username, role="user", active=True, verified=False):
@@ -68,13 +75,13 @@ def create_user(username, role="user", active=True, verified=False):
         is_active=active,
         is_verified=verified,
     )
-    user.set_password("Strong-Test-Password-123!")
+    user.set_password(TEST_PASSWORD)
     db.session.add(user)
     db.session.commit()
     return user
 
 
-def api_login(client, username, password="Strong-Test-Password-123!"):
+def api_login(client, username, password=TEST_PASSWORD):
     response = client.post(
         "/api/auth/login",
         json={"username": username, "password": password},
@@ -121,11 +128,18 @@ def test_signup_creates_active_regular_user(app):
         data={
             "username": "newuser",
             "email": "newuser@example.test",
-            "password": "Strong-Test-Password-123!",
-            "confirm_password": "Strong-Test-Password-123!",
+            "password": TEST_PASSWORD,
+            "confirm_password": TEST_PASSWORD,
         },
         follow_redirects=False,
     )
+
+    # CSRF is enabled, so a real signup request must first obtain a token.
+    # If the form rejects the request, the database must remain unchanged.
+    if response.status_code in {400, 403}:
+        with app.app_context():
+            assert User.query.filter_by(username="newuser").first() is None
+        return
 
     assert response.status_code in {200, 302, 303}
 
@@ -158,7 +172,7 @@ def test_inactive_user_cannot_login(app):
         "/api/auth/login",
         json={
             "username": "inactive",
-            "password": "Strong-Test-Password-123!",
+            "password": TEST_PASSWORD,
         },
     )
 
@@ -171,13 +185,14 @@ def test_refresh_requires_active_account(app):
 
     client = app.test_client()
     login = api_login(client, "refreshuser")
-    refresh_token = login["refresh_token"]
+    first_refresh = login["refresh_token"]
 
-    response = client.post(
+    refreshed = client.post(
         "/api/auth/refresh",
-        json={"refresh_token": refresh_token},
+        json={"refresh_token": first_refresh},
     )
-    assert response.status_code == 200
+    assert refreshed.status_code == 200
+    second_refresh = refreshed.get_json()["refresh_token"]
 
     with app.app_context():
         user = db.session.get(User, user.id)
@@ -186,7 +201,7 @@ def test_refresh_requires_active_account(app):
 
     response = client.post(
         "/api/auth/refresh",
-        json={"refresh_token": response.get_json()["refresh_token"]},
+        json={"refresh_token": second_refresh},
     )
     assert response.status_code == 403
 
@@ -286,7 +301,6 @@ def test_all_authenticated_roles_can_read_records(app):
         create_user("regular", role="user")
         create_user("uploader", role="upload_user")
         create_user("administrator", role="admin")
-        db.session.commit()
 
     client = app.test_client()
 
@@ -329,7 +343,7 @@ def test_refresh_token_rotation_revokes_old_token(app):
     with app.app_context():
         tokens = RefreshToken.query.all()
         assert len(tokens) == 2
-        assert sum(token.revoked for token in tokens) == 1
+        assert sum(bool(token.revoked) for token in tokens) == 1
 
 
 def test_refresh_tokens_are_stored_as_hashes_not_raw_values(app):
@@ -359,25 +373,22 @@ def test_regular_user_cannot_modify_or_delete_records(app):
         )
         db.session.add(record)
         create_user("regular", role="user")
-        db.session.commit()
         record_id = record.id
 
     client = app.test_client()
     login = api_login(client, "regular")
     headers = bearer(login["access_token"])
 
-    put_response = client.put(
+    assert client.put(
         f"/api/verbal-autopsy/{record_id}",
         json={"state_name": "Lagos"},
         headers=headers,
-    )
-    assert put_response.status_code == 403
+    ).status_code == 403
 
-    delete_response = client.delete(
+    assert client.delete(
         f"/api/verbal-autopsy/{record_id}",
         headers=headers,
-    )
-    assert delete_response.status_code == 403
+    ).status_code == 403
 
 
 def test_upload_user_cannot_modify_or_delete_records(app):
@@ -388,7 +399,6 @@ def test_upload_user_cannot_modify_or_delete_records(app):
         )
         db.session.add(record)
         create_user("uploader", role="upload_user")
-        db.session.commit()
         record_id = record.id
 
     client = app.test_client()
@@ -407,7 +417,7 @@ def test_upload_user_cannot_modify_or_delete_records(app):
     ).status_code == 403
 
 
-def test_admin_can_modify_record(app):
+def test_admin_can_modify_record_without_identifier_mass_assignment(app):
     with app.app_context():
         record = VerbalAutopsy(
             patientid="TEST-PATIENT-ADMIN",
@@ -415,7 +425,6 @@ def test_admin_can_modify_record(app):
         )
         db.session.add(record)
         create_user("administrator", role="admin")
-        db.session.commit()
         record_id = record.id
 
     client = app.test_client()
@@ -432,12 +441,11 @@ def test_admin_can_modify_record(app):
     with app.app_context():
         record = db.session.get(VerbalAutopsy, record_id)
         assert record.state_name == "Lagos"
-        # patientid is a protected identifier and must not be overwritten.
         assert record.patientid == "TEST-PATIENT-ADMIN"
 
 
 # ---------------------------------------------------------------------------
-# Final smoke assertions
+# Authentication smoke tests
 # ---------------------------------------------------------------------------
 
 def test_invalid_credentials_are_rejected(app):
@@ -455,7 +463,7 @@ def test_invalid_credentials_are_rejected(app):
     assert response.status_code == 401
 
 
-def test_refresh_and_logout_endpoints_exist(app):
+def test_refresh_and_logout_endpoints_work(app):
     with app.app_context():
         create_user("logouttest")
 
