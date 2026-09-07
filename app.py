@@ -2,6 +2,8 @@
 Application entry point for the Verbal Autopsy Outcome Dashboard.
 """
 
+import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -45,28 +47,58 @@ def validate_security_config(app):
 
 
 def create_default_admin():
-    if (
-        Config.IS_PRODUCTION
-        or User.query.count() > 0
-    ):
+    """
+    Create a development-only administrator account when explicitly
+    configured through environment variables.
+
+    Production environments never create a default administrator.
+    The administrator password must never be hard-coded in source code.
+    """
+    if Config.IS_PRODUCTION:
         return
+
+    if User.query.count() > 0:
+        return
+
+    admin_password = os.getenv("DEV_ADMIN_PASSWORD")
+
+    if not admin_password:
+        print(
+            "No development admin created. "
+            "Set DEV_ADMIN_PASSWORD in the environment "
+            "if a local admin account is required."
+        )
+        return
+
+    if len(admin_password) < 12:
+        raise RuntimeError(
+            "DEV_ADMIN_PASSWORD must contain at least "
+            "12 characters."
+        )
+
+    admin_email = os.getenv(
+        "DEV_ADMIN_EMAIL",
+        "admin@localhost",
+    )
 
     admin = User(
         username="admin",
-        email="admin@example.com",
+        email=admin_email,
         role="admin",
         is_verified=True,
         is_active=True,
     )
 
-    admin.set_password("admin123")
+    admin.set_password(
+        admin_password,
+        validate=True,
+    )
 
     db.session.add(admin)
     db.session.commit()
 
-    print("Default development admin created.")
+    print("Development admin account created.")
     print("Username: admin")
-    print("Password: admin123")
 
 
 def create_app():
