@@ -83,7 +83,10 @@ def check_account_status(
     ip_address,
 ):
     """
-    Check whether the authenticated user is verified and active.
+    Check whether the authenticated user is active.
+
+    Account verification is informational/administrative only.
+    It does not block login or normal system access.
     """
 
     if user is None:
@@ -97,19 +100,6 @@ def check_account_status(
         return authorization_response(
             "Authentication is required.",
             401,
-        )
-
-    if not user.is_verified:
-
-        current_app.logger.warning(
-            "Unverified user %s attempted to access %s",
-            user.id,
-            endpoint,
-        )
-
-        return authorization_response(
-            "Your account has not been verified by an administrator.",
-            403,
         )
 
     if not user.is_active:
@@ -135,7 +125,7 @@ def check_user_role(
     ip_address,
 ):
     """
-    Verify that the user is verified, active and has an allowed role.
+    Verify that the user is active and has an allowed role.
 
     Application roles:
 
