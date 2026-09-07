@@ -87,25 +87,30 @@
                                     <div class="d-flex justify-content-end gap-1 flex-wrap">
                                         {% if user.is_verified %}
                                         <form method="POST" action="{{ url_for('admin.unverify_user', user_id=user.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-sm btn-outline-warning">Unverify</button>
                                         </form>
                                         {% else %}
                                         <form method="POST" action="{{ url_for('admin.verify_user', user_id=user.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-sm btn-success">Mark Verified</button>
                                         </form>
                                         {% endif %}
 
                                         {% if user.is_active %}
                                         <form method="POST" action="{{ url_for('admin.deactivate_user', user_id=user.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
                                         </form>
                                         {% else %}
                                         <form method="POST" action="{{ url_for('admin.activate_user', user_id=user.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-sm btn-outline-success">Activate</button>
                                         </form>
                                         {% endif %}
 
                                         <form method="POST" action="{{ url_for('admin.change_role', user_id=user.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <select name="role" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Change role for {{ user.username }}">
                                                 <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
                                                 <option value="upload_user" {% if user.role == 'upload_user' %}selected{% endif %}>Upload User</option>
@@ -116,6 +121,7 @@
                                         </form>
 
                                         <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" onsubmit="return confirm('Permanently delete this user?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                                         </form>
                                     </div>
