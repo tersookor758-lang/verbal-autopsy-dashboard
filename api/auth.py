@@ -96,11 +96,17 @@ auth_user_model = api.model(
         ),
         "is_verified": fields.Boolean(
             required=True,
-            description="Whether an administrator has verified the account.",
+            description=(
+                "Administrative verification status. "
+                "This does not control normal system access."
+            ),
         ),
         "is_active": fields.Boolean(
             required=True,
-            description="Whether the account is active.",
+            description=(
+                "Whether the account is active. "
+                "Inactive accounts cannot authenticate or access protected resources."
+            ),
         ),
     },
 )
@@ -263,8 +269,8 @@ def create_user_access_token(user):
     """
     Create a JWT access token for a user.
 
-    The database remains the source of truth for role,
-    verification and active status.
+    The database remains the source of truth for the
+    user's current role and active status.
     """
 
     return create_access_token(
@@ -320,16 +326,17 @@ def get_refresh_token(raw_token):
 
 def account_can_authenticate(user):
     """
-    Determine whether an account is permitted to log in.
+    Determine whether an account is permitted to authenticate.
+
+    Account verification is intentionally NOT required.
+
+    The active flag is the actual account-access control.
     """
 
     if user is None:
         return False
 
-    return (
-        bool(user.is_verified)
-        and bool(user.is_active)
-    )
+    return bool(user.is_active)
 
 
 # ==========================================================
@@ -360,7 +367,7 @@ class Login(Resource):
     )
     @auth_ns.response(
         403,
-        "Account is not verified or has been deactivated.",
+        "Account has been deactivated or has an invalid role.",
         message_response_model,
     )
     @auth_ns.response(
@@ -372,6 +379,9 @@ class Login(Resource):
     def post(self):
         """
         Authenticate a user and issue JWT + refresh tokens.
+
+        Account verification does not block authentication.
+        Only inactive accounts are denied.
         """
 
         data = request.get_json(
@@ -413,25 +423,6 @@ class Login(Resource):
                 401,
             )
 
-        if not user.is_verified:
-
-            current_app.logger.warning(
-                "Login denied for unverified user %s (%s).",
-                user.id,
-                username,
-            )
-
-            log_failed_login(
-                username,
-                ip_address,
-                "Account not verified",
-            )
-
-            return error_response(
-                "Your account has not been verified by an administrator.",
-                403,
-            )
-
         if not user.is_active:
 
             current_app.logger.warning(
@@ -467,6 +458,7 @@ class Login(Resource):
             "upload_user",
             "admin",
         }:
+
             current_app.logger.error(
                 "User %s has an invalid role: %s",
                 user.id,
@@ -493,7 +485,6 @@ class Login(Resource):
                 include_user=True,
             )
 
-            # Persist the newly created refresh token.
             db.session.commit()
 
         except Exception as error:
@@ -548,12 +539,15 @@ class Refresh(Resource):
     )
     @auth_ns.response(
         403,
-        "Account is no longer permitted to access the system.",
+        "Account has been deactivated.",
         message_response_model,
     )
     def post(self):
         """
         Rotate a refresh token and issue a new access token.
+
+        Account verification does not affect refresh.
+        Only inactive accounts are denied.
         """
 
         data = request.get_json(
@@ -606,24 +600,6 @@ class Refresh(Resource):
             return error_response(
                 "User associated with token was not found.",
                 401,
-            )
-
-        if not user.is_verified:
-
-            refresh_token.revoked = True
-
-            db.session.commit()
-
-            log_token_refresh(
-                user.username,
-                user.id,
-                success=False,
-                reason="Account not verified",
-            )
-
-            return error_response(
-                "Your account is no longer verified.",
-                403,
             )
 
         if not user.is_active:
@@ -830,7 +806,7 @@ class CurrentUser(Resource):
     )
     @auth_ns.response(
         403,
-        "Account is not verified, inactive, or unauthorized.",
+        "Account is inactive or unauthorized.",
         message_response_model,
     )
     @auth_ns.response(
