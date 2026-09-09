@@ -115,17 +115,12 @@ def create_app():
 
     csrf.init_app(app)
 
-    limiter_kwargs = {}
-
     if Config.RATE_LIMIT_STORAGE_URI:
-        limiter_kwargs["storage_uri"] = (
+        app.config["RATELIMIT_STORAGE_URI"] = (
             Config.RATE_LIMIT_STORAGE_URI
         )
 
-    limiter.init_app(
-        app,
-        **limiter_kwargs,
-    )
+    limiter.init_app(app)
 
     CORS(
         app,
