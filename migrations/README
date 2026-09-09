@@ -1,0 +1,9 @@
+# Flask-Migrate database migrations
+
+This directory contains the Alembic migration history for the Verbal Autopsy Outcome Dashboard.
+
+Production database schema changes must be applied with Flask-Migrate/Alembic:
+
+    flask db upgrade
+
+Do not use `db.create_all()` as a production schema-management mechanism.
