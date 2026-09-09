@@ -105,7 +105,7 @@ def test_health_endpoint_and_swagger(app):
     assert health.status_code == 200
     assert health.get_json()["status"] == "healthy"
 
-    swagger = client.get("/swagger")
+    swagger = client.get("/api/swagger")
     assert swagger.status_code == 200
 
 
