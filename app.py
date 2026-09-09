@@ -25,7 +25,7 @@ from models import User
 
 from dashboard import dashboard_bp
 from api import api_bp
-from auth import create_auth_blueprint
+from Auth import create_auth_blueprint
 from admin import admin_bp
 
 
