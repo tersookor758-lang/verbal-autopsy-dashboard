@@ -184,7 +184,10 @@ def create_app():
             }), 503
 
     with app.app_context():
-        if not Config.IS_PRODUCTION:
+        # Development keeps the convenient create_all workflow. Testing
+        # and production must use Alembic migrations so schema changes are
+        # exercised and tracked consistently.
+        if Config.ENVIRONMENT == "development":
             db.create_all()
             create_default_admin()
 
