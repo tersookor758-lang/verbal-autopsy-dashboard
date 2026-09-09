@@ -1,167 +1,95 @@
 # Verbal Autopsy Outcome Dashboard
 
-A Flask-based web application for managing, analyzing, validating, and visualizing Verbal Autopsy records across Nigeria.
+A secure, professional web application for managing, analyzing, validating, and visualizing Verbal Autopsy records across Nigeria.
+
+The platform transforms Verbal Autopsy records into useful health-data intelligence through structured data management, analytics, visualization, reporting, and a secure REST API.
 
 ---
 
-## Features
+## Project Overview
 
-- Dashboard with summary statistics
-- Interactive charts using Chart.js
-- Filter records by:
-  - State
-  - LGA
-  - Facility
-  - Cause of Death
-  - Interview Year
-  - Patient ID
-- Upload records from:
-  - CSV
-  - Excel (.xlsx/.xls)
-  - JSON
-- Automatic validation and normalization
-- Export records to:
-  - CSV
-  - Excel
-  - JSON
-- REST API with Swagger documentation
-- SQLite database
-- Responsive Bootstrap interface
+The Verbal Autopsy Outcome Dashboard provides authorized users with a centralized platform for:
+
+- Managing Verbal Autopsy records
+- Searching and filtering health records
+- Viewing dashboard statistics
+- Visualizing health-data trends
+- Uploading validated datasets
+- Exporting records
+- Managing user accounts
+- Controlling permissions through role-based access control
+- Accessing a documented REST API
+- Managing data through a MySQL database
 
 ---
 
-## Technologies Used
+## Core Features
 
-- Python
-- Flask
-- Flask-RESTX
-- Flask-SQLAlchemy
-- Bootstrap 5
-- Chart.js
-- Pandas
-- OpenPyXL
-- Mysql
+### Authentication
 
----
+- User registration
+- User login
+- User logout
+- Secure password hashing
+- Session-based authentication
+- JWT authentication for the REST API
+- Access and refresh tokens
+- Refresh-token rotation
+- Account activation and verification
+- Failed-login protection
 
-## Project Structure
+### Role-Based Access Control
+
+The application supports three primary roles.
+
+#### User
+
+Can:
+
+- Access the dashboard
+- View records
+- Search and filter records
+- Download/export records
+
+Cannot:
+
+- Upload datasets
+- Modify records
+- Delete records
+- Manage users
+
+#### Upload User
+
+Can:
+
+- Access the dashboard
+- View records
+- Search and filter records
+- Download/export records
+- Upload datasets
+
+Upload functionality is restricted to authorized upload users.
+
+#### Administrator
+
+Can:
+
+- Access the dashboard
+- View records
+- Search and filter records
+- Upload datasets
+- Export records
+- Modify records
+- Delete records
+- Manage user accounts
+- Approve accounts
+- Activate accounts
+- Deactivate accounts
+- Change user roles
+
+### Super Administrator
+
+The built-in account with username:
 
 ```text
-project/
-│
-├── api/
-├── dashboard/
-├── resources/
-│   ├── raw/
-│   └── utils/
-├── static/
-│   ├── css/
-│   └── js/
-├── templates/
-├── uploads/
-├── app.py
-├── config.py
-├── models.py
-├── extensions.py
-├── requirements.txt
-└── README.md
-```
-
----
-
-## Installation
-
-Clone the repository:
-
-```bash
-git clone <repository-url>
-```
-
-Move into the project:
-
-```bash
-cd project
-```
-
-Create a virtual environment:
-
-```bash
-python -m venv venv
-```
-
-Activate the environment.
-
-Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-Linux/macOS:
-
-```bash
-source venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Run the application:
-
-```bash
-python app.py
-```
-
-The application will start at:
-
-```text
-http://127.0.0.1:5000
-```
-
----
-
-## API Documentation
-
-Swagger UI is available at:
-
-```text
-http://127.0.0.1:5001/api/
-```
-
----
-
-## Supported Upload Formats
-
-- CSV
-- Excel (.xlsx)
-- Excel (.xls)
-- JSON
-
----
-
-## Supported Export Formats
-
-- CSV
-- Excel
-- JSON
-
----
-
-## Dashboard Features
-
-- Summary statistics
-- Interactive charts
-- Pagination
-- Dynamic State → LGA filtering
-- Search and filtering
-- Data upload
-- Data export
-
----
-
-## License
-
-This project is provided for educational and research purposes.
+admin
