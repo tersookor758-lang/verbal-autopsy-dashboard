@@ -23,10 +23,12 @@ instance/
 .flaskenv
 
 # ==========================================
-# Environment Variables
+# Environment Variables / Secrets
 # ==========================================
 
 .env
+.env.*
+!.env.example
 
 # ==========================================
 # SQLite Databases
@@ -43,10 +45,12 @@ instance/
 uploads/
 
 # ==========================================
-# Logs
+# Logs / Runtime Files
 # ==========================================
 
 *.log
+*.pid
+*.tmp
 
 # ==========================================
 # VS Code
@@ -71,6 +75,7 @@ uploads/
 # ==========================================
 
 Thumbs.db
+desktop.ini
 
 # ==========================================
 # Testing
@@ -78,10 +83,11 @@ Thumbs.db
 
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
 
 # ==========================================
-# Build Files
+# Build / Distribution Files
 # ==========================================
 
 build/
