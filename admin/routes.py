@@ -1,18 +1,27 @@
+"""
+Administrator routes for the Verbal Autopsy Outcome Dashboard.
+"""
+
+from functools import wraps
+
 from flask import (
+    Blueprint,
     flash,
     redirect,
     render_template,
     request,
     url_for,
 )
-from flask_login import (
-    current_user,
-    login_required,
-)
+from flask_login import current_user, login_required
 
-from admin import admin_bp
 from extensions import db
 from models import User
+
+
+admin_bp = Blueprint(
+    "admin",
+    __name__,
+)
 
 
 SUPER_ADMIN_USERNAME = "admin"
@@ -25,77 +34,53 @@ VALID_ROLES = {
 
 
 def is_super_admin(user):
-    """
-    Return True when the account is the permanent
-    Super Administrator.
-    """
+    """Return True when the user is the permanent Super Administrator."""
 
     return (
         user is not None
-        and (user.username or "").strip().lower()
-        == SUPER_ADMIN_USERNAME
+        and user.username.lower() == SUPER_ADMIN_USERNAME
     )
 
 
-def admin_required():
-    """
-    Require an authenticated, active administrator.
+def admin_required(view):
+    """Restrict access to active administrator accounts."""
 
-    Account verification does not control normal access.
-    """
+    @wraps(view)
+    @login_required
+    def wrapped_view(*args, **kwargs):
 
-    if not current_user.is_authenticated:
-        return redirect(
-            url_for("auth.login")
-        )
+        if not current_user.is_active:
+            flash(
+                "Your account is inactive.",
+                "danger",
+            )
+            return redirect(
+                url_for("auth.login")
+            )
 
-    if not current_user.is_active:
-        flash(
-            "Your account has been deactivated.",
-            "danger",
-        )
+        if not current_user.is_admin():
+            flash(
+                "Administrator access is required.",
+                "danger",
+            )
+            return redirect(
+                url_for("dashboard.index")
+            )
 
-        return redirect(
-            url_for("dashboard.index")
-        )
+        return view(*args, **kwargs)
 
-    role = (
-        current_user.role or ""
-    ).strip().lower()
-
-    if role != "admin":
-        flash(
-            "You do not have permission to access the administrator area.",
-            "danger",
-        )
-
-        return redirect(
-            url_for("dashboard.index")
-        )
-
-    return True
+    return wrapped_view
 
 
 def protected_target(user):
-    """
-    Prevent administrators from modifying the
-    permanent Super Administrator account.
-    """
+    """Return True when the target is the permanent Super Administrator."""
 
-    if is_super_admin(user):
-
-        flash(
-            "The Super Administrator account cannot be modified.",
-            "danger",
-        )
-
-        return True
-
-    return False
+    return is_super_admin(user)
 
 
 @admin_bp.after_request
-def prevent_admin_cache(response):
+def add_no_cache_headers(response):
+    """Prevent administrator pages from being cached."""
 
     response.headers["Cache-Control"] = (
         "no-store, no-cache, must-revalidate, max-age=0"
@@ -108,47 +93,39 @@ def prevent_admin_cache(response):
 
 
 @admin_bp.route("/")
-@login_required
+@admin_required
 def index():
+    """Display the administrator dashboard."""
 
-    access = admin_required()
+    total_users = User.query.count()
 
-    if access is not True:
-        return access
+    verified_users = User.query.filter_by(
+        is_verified=True
+    ).count()
 
-    stats = {
-        "total_users": User.query.count(),
+    pending_users = User.query.filter_by(
+        is_verified=False
+    ).count()
 
-        "verified_users": User.query.filter_by(
-            is_verified=True
-        ).count(),
+    active_users = User.query.filter_by(
+        is_active=True
+    ).count()
 
-        "pending_users": User.query.filter_by(
-            is_verified=False
-        ).count(),
+    inactive_users = User.query.filter_by(
+        is_active=False
+    ).count()
 
-        "active_users": User.query.filter_by(
-            is_active=True
-        ).count(),
+    admin_users = User.query.filter_by(
+        role="admin"
+    ).count()
 
-        "inactive_users": User.query.filter_by(
-            is_active=False
-        ).count(),
+    regular_users = User.query.filter_by(
+        role="user"
+    ).count()
 
-        "admin_users": User.query.filter(
-            User.role.in_(
-                ["admin", "administrator"]
-            )
-        ).count(),
-
-        "regular_users": User.query.filter_by(
-            role="user"
-        ).count(),
-
-        "upload_users": User.query.filter_by(
-            role="upload_user"
-        ).count(),
-    }
+    upload_users = User.query.filter_by(
+        role="upload_user"
+    ).count()
 
     recent_users = (
         User.query
@@ -158,424 +135,359 @@ def index():
     )
 
     return render_template(
-        "admin/index.html",
-        **stats,
+        "index.html",
+        total_users=total_users,
+        verified_users=verified_users,
+        pending_users=pending_users,
+        active_users=active_users,
+        inactive_users=inactive_users,
+        admin_users=admin_users,
+        regular_users=regular_users,
+        upload_users=upload_users,
         recent_users=recent_users,
     )
 
 
 @admin_bp.route("/users")
-@login_required
+@admin_required
 def users():
+    """
+    Display all users for administrator management.
 
-    access = admin_required()
+    The user-management page must use an existing project template.
+    """
 
-    if access is not True:
-        return access
-
-    users = (
+    all_users = (
         User.query
         .order_by(User.created_at.desc())
         .all()
     )
 
     return render_template(
-        "admin/users.html",
-        users=users,
+        "users.html",
+        users=all_users,
+        super_admin_username=SUPER_ADMIN_USERNAME,
     )
 
 
-@admin_bp.route(
-    "/users/<int:user_id>/verify",
-    methods=["POST"],
-)
-@login_required
+@admin_bp.route("/users/<int:user_id>/verify", methods=["POST"])
+@admin_required
 def verify_user(user_id):
+    """Verify a user account."""
 
-    access = admin_required()
+    user = db.session.get(User, user_id)
 
-    if access is not True:
-        return access
-
-    user = User.query.get_or_404(
-        user_id
-    )
+    if user is None:
+        flash(
+            "User not found.",
+            "danger",
+        )
+        return redirect(
+            url_for("admin.users")
+        )
 
     if protected_target(user):
+        flash(
+            "The Super Administrator account cannot be modified.",
+            "danger",
+        )
         return redirect(
             url_for("admin.users")
         )
 
     try:
-
         user.is_verified = True
 
         db.session.commit()
 
-    except Exception:
+        flash(
+            f"User '{user.username}' has been verified.",
+            "success",
+        )
 
+    except Exception:
         db.session.rollback()
 
         flash(
-            "The verification status could not be changed. Please try again.",
+            "Unable to verify the user.",
             "danger",
         )
-
-        return redirect(
-            url_for("admin.users")
-        )
-
-    flash(
-        f"User '{user.username}' has been marked as verified.",
-        "success",
-    )
 
     return redirect(
         url_for("admin.users")
     )
 
 
-@admin_bp.route(
-    "/users/<int:user_id>/unverify",
-    methods=["POST"],
-)
-@login_required
+@admin_bp.route("/users/<int:user_id>/unverify", methods=["POST"])
+@admin_required
 def unverify_user(user_id):
+    """Remove verification from a user account."""
 
-    access = admin_required()
+    user = db.session.get(User, user_id)
 
-    if access is not True:
-        return access
-
-    user = User.query.get_or_404(
-        user_id
-    )
-
-    if user.id == current_user.id:
-
+    if user is None:
         flash(
-            "You cannot change your own verification status.",
+            "User not found.",
             "danger",
         )
-
         return redirect(
             url_for("admin.users")
         )
 
     if protected_target(user):
+        flash(
+            "The Super Administrator account cannot be modified.",
+            "danger",
+        )
         return redirect(
             url_for("admin.users")
         )
 
     try:
-
         user.is_verified = False
 
         db.session.commit()
 
-    except Exception:
+        flash(
+            f"User '{user.username}' is now unverified.",
+            "success",
+        )
 
+    except Exception:
         db.session.rollback()
 
         flash(
-            "The verification status could not be changed. Please try again.",
+            "Unable to change the user's verification status.",
             "danger",
         )
-
-        return redirect(
-            url_for("admin.users")
-        )
-
-    flash(
-        f"User '{user.username}' is now marked as unverified.",
-        "warning",
-    )
 
     return redirect(
         url_for("admin.users")
     )
 
 
-@admin_bp.route(
-    "/users/<int:user_id>/activate",
-    methods=["POST"],
-)
-@login_required
+@admin_bp.route("/users/<int:user_id>/activate", methods=["POST"])
+@admin_required
 def activate_user(user_id):
+    """Activate a user account."""
 
-    access = admin_required()
+    user = db.session.get(User, user_id)
 
-    if access is not True:
-        return access
-
-    user = User.query.get_or_404(
-        user_id
-    )
+    if user is None:
+        flash(
+            "User not found.",
+            "danger",
+        )
+        return redirect(
+            url_for("admin.users")
+        )
 
     if protected_target(user):
+        flash(
+            "The Super Administrator account cannot be modified.",
+            "danger",
+        )
         return redirect(
             url_for("admin.users")
         )
 
     try:
-
         user.is_active = True
 
         db.session.commit()
 
-    except Exception:
+        flash(
+            f"User '{user.username}' has been activated.",
+            "success",
+        )
 
+    except Exception:
         db.session.rollback()
 
         flash(
-            "The account could not be activated. Please try again.",
+            "Unable to activate the user.",
             "danger",
         )
-
-        return redirect(
-            url_for("admin.users")
-        )
-
-    flash(
-        f"User '{user.username}' has been activated.",
-        "success",
-    )
 
     return redirect(
         url_for("admin.users")
     )
 
 
-@admin_bp.route(
-    "/users/<int:user_id>/deactivate",
-    methods=["POST"],
-)
-@login_required
+@admin_bp.route("/users/<int:user_id>/deactivate", methods=["POST"])
+@admin_required
 def deactivate_user(user_id):
+    """Deactivate a user account."""
 
-    access = admin_required()
+    user = db.session.get(User, user_id)
 
-    if access is not True:
-        return access
-
-    user = User.query.get_or_404(
-        user_id
-    )
-
-    if user.id == current_user.id:
-
+    if user is None:
         flash(
-            "You cannot deactivate your own account.",
+            "User not found.",
             "danger",
         )
-
         return redirect(
             url_for("admin.users")
         )
 
     if protected_target(user):
+        flash(
+            "The Super Administrator account cannot be modified.",
+            "danger",
+        )
         return redirect(
             url_for("admin.users")
         )
 
     try:
-
         user.is_active = False
 
         db.session.commit()
 
-    except Exception:
+        flash(
+            f"User '{user.username}' has been deactivated.",
+            "success",
+        )
 
+    except Exception:
         db.session.rollback()
 
         flash(
-            "The account could not be deactivated. Please try again.",
+            "Unable to deactivate the user.",
             "danger",
         )
-
-        return redirect(
-            url_for("admin.users")
-        )
-
-    flash(
-        f"User '{user.username}' has been deactivated.",
-        "warning",
-    )
 
     return redirect(
         url_for("admin.users")
     )
 
 
-@admin_bp.route(
-    "/users/<int:user_id>/role",
-    methods=["POST"],
-)
-@login_required
+@admin_bp.route("/users/<int:user_id>/role", methods=["POST"])
+@admin_required
 def change_role(user_id):
+    """Change a user's role."""
 
-    access = admin_required()
+    user = db.session.get(User, user_id)
 
-    if access is not True:
-        return access
-
-    user = User.query.get_or_404(
-        user_id
-    )
-
-    new_role = (
-        request.form.get(
-            "role",
-            "",
-        )
-        .strip()
-        .lower()
-    )
-
-    if user.id == current_user.id:
-
+    if user is None:
         flash(
-            "You cannot change your own administrator role.",
+            "User not found.",
             "danger",
         )
-
         return redirect(
             url_for("admin.users")
         )
 
     if protected_target(user):
+        flash(
+            "The Super Administrator account cannot be modified.",
+            "danger",
+        )
         return redirect(
             url_for("admin.users")
         )
 
-    if new_role not in VALID_ROLES:
+    new_role = request.form.get(
+        "role",
+        ""
+    ).strip().lower()
 
+    if new_role not in VALID_ROLES:
         flash(
             "Invalid user role.",
             "danger",
         )
-
         return redirect(
             url_for("admin.users")
         )
 
-    # ======================================================
-    # SUPER ADMIN ROLE PROTECTION
-    # ======================================================
-    #
-    # Only the permanent Super Administrator can grant
-    # another account the "admin" role.
-    #
-    # Normal administrators can still:
-    #   - change user -> upload_user
-    #   - change upload_user -> user
-    #   - demote another admin
-    #   - manage other administrators
-    #
-    # They simply cannot create another administrator.
-    # ======================================================
-
-    if new_role == "admin" and not is_super_admin(
-        current_user
+    if (
+        new_role == "admin"
+        and not is_super_admin(current_user)
     ):
-
         flash(
-            "Only the Super Administrator can grant the administrator role.",
+            "Only the Super Administrator can grant administrator privileges.",
             "danger",
         )
-
         return redirect(
             url_for("admin.users")
         )
 
     try:
-
         user.role = new_role
 
         db.session.commit()
 
-    except Exception:
+        flash(
+            f"Role for '{user.username}' changed to '{new_role}'.",
+            "success",
+        )
 
+    except Exception:
         db.session.rollback()
 
         flash(
-            "The user role could not be changed. Please try again.",
+            "Unable to change the user's role.",
             "danger",
         )
-
-        return redirect(
-            url_for("admin.users")
-        )
-
-    flash(
-        f"Role for '{user.username}' changed to '{new_role}'.",
-        "success",
-    )
 
     return redirect(
         url_for("admin.users")
     )
 
 
-@admin_bp.route(
-    "/users/<int:user_id>/delete",
-    methods=["POST"],
-)
-@login_required
+@admin_bp.route("/users/<int:user_id>/delete", methods=["POST"])
+@admin_required
 def delete_user(user_id):
+    """Delete a user account."""
 
-    access = admin_required()
+    user = db.session.get(User, user_id)
 
-    if access is not True:
-        return access
-
-    user = User.query.get_or_404(
-        user_id
-    )
-
-    if user.id == current_user.id:
-
+    if user is None:
         flash(
-            "You cannot delete your own account.",
+            "User not found.",
             "danger",
         )
-
         return redirect(
             url_for("admin.users")
         )
 
     if protected_target(user):
+        flash(
+            "The Super Administrator account cannot be deleted.",
+            "danger",
+        )
         return redirect(
             url_for("admin.users")
         )
 
-    username = user.username
-
-    try:
-
-        db.session.delete(
-            user
+    if user.id == current_user.id:
+        flash(
+            "You cannot delete your own account.",
+            "danger",
+        )
+        return redirect(
+            url_for("admin.users")
         )
 
+    try:
+        username = user.username
+
+        db.session.delete(user)
         db.session.commit()
 
-    except Exception:
+        flash(
+            f"User '{username}' has been deleted.",
+            "success",
+        )
 
+    except Exception:
         db.session.rollback()
 
         flash(
-            "The user could not be deleted. Please try again.",
+            "Unable to delete the user.",
             "danger",
         )
-
-        return redirect(
-            url_for("admin.users")
-        )
-
-    flash(
-        f"User '{username}' has been deleted.",
-        "success",
-    )
 
     return redirect(
         url_for("admin.users")
