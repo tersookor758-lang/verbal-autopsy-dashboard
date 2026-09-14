@@ -1,19 +1,7 @@
 """
-Administrator Blueprint
-
-Handles:
-- Administrator dashboard
-- User management
-- Account activation/deactivation
-- Role management
-- User deletion
+Administrator blueprint package.
 """
 
-from flask import Blueprint
+from admin.routes import admin_bp
 
-
-admin_bp = Blueprint(
-    "admin",
-    __name__,
-    template_folder="templates",
-)
+__all__ = ["admin_bp"]
