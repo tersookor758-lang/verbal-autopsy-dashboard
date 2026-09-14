@@ -1,43 +1,568 @@
-
 {% extends "base.html" %}
 
 {% block title %}
-
-Verbal Autopsy Dashboard
-
+    Administrator Dashboard
 {% endblock %}
+
 
 {% block content %}
 
 <div class="mb-4">
 
-    <h2 class="fw-bold">
-        Verbal Autopsy Outcome Dashboard
-    </h2>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
 
-    <p class="text-muted mb-0">
-        Monitor Verbal Autopsy records across Nigeria through a
-        high-level overview of the available data.
-    </p>
+        <div>
+
+            <h2 class="fw-bold mb-1">
+                Administrator Dashboard
+            </h2>
+
+            <p class="text-muted mb-0">
+                Manage users, permissions, and system access.
+            </p>
+
+        </div>
+
+        <a
+            href="{{ url_for('admin.users') }}"
+            class="btn btn-primary"
+        >
+            <i class="bi bi-people me-1"></i>
+            Manage Users
+        </a>
+
+    </div>
 
 </div>
 
 
-{% include "components/stat_cards.html" %}
+<div class="row g-4">
 
+
+    <!-- Total Users -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-start">
+
+                    <div>
+
+                        <p class="text-muted mb-1">
+                            Total Users
+                        </p>
+
+                        <h3 class="fw-bold mb-0">
+                            {{ total_users }}
+                        </h3>
+
+                    </div>
+
+                    <div class="fs-3 text-primary">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Verified Users -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-start">
+
+                    <div>
+
+                        <p class="text-muted mb-1">
+                            Verified Users
+                        </p>
+
+                        <h3 class="fw-bold mb-0">
+                            {{ verified_users }}
+                        </h3>
+
+                    </div>
+
+                    <div class="fs-3 text-success">
+                        <i class="bi bi-person-check-fill"></i>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Pending Users -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-start">
+
+                    <div>
+
+                        <p class="text-muted mb-1">
+                            Pending Verification
+                        </p>
+
+                        <h3 class="fw-bold mb-0">
+                            {{ pending_users }}
+                        </h3>
+
+                    </div>
+
+                    <div class="fs-3 text-warning">
+                        <i class="bi bi-person-exclamation"></i>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Active Users -->
+
+    <div class="col-12 col-sm-6 col-xl-3">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-start">
+
+                    <div>
+
+                        <p class="text-muted mb-1">
+                            Active Users
+                        </p>
+
+                        <h3 class="fw-bold mb-0">
+                            {{ active_users }}
+                        </h3>
+
+                    </div>
+
+                    <div class="fs-3 text-info">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="row g-4 mt-1">
+
+
+    <!-- Account Status -->
+
+    <div class="col-12 col-lg-6">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-4">
+                    Account Status
+                </h5>
+
+                <div class="row g-3">
+
+                    <div class="col-6">
+
+                        <div class="p-3 rounded border">
+
+                            <div class="text-muted small">
+                                Active Accounts
+                            </div>
+
+                            <div class="fs-4 fw-bold">
+                                {{ active_users }}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-6">
+
+                        <div class="p-3 rounded border">
+
+                            <div class="text-muted small">
+                                Inactive Accounts
+                            </div>
+
+                            <div class="fs-4 fw-bold">
+                                {{ inactive_users }}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-6">
+
+                        <div class="p-3 rounded border">
+
+                            <div class="text-muted small">
+                                Verified Accounts
+                            </div>
+
+                            <div class="fs-4 fw-bold">
+                                {{ verified_users }}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-6">
+
+                        <div class="p-3 rounded border">
+
+                            <div class="text-muted small">
+                                Pending Accounts
+                            </div>
+
+                            <div class="fs-4 fw-bold">
+                                {{ pending_users }}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Roles -->
+
+    <div class="col-12 col-lg-6">
+
+        <div class="card shadow-sm border-0 h-100">
+
+            <div class="card-body">
+
+                <h5 class="fw-bold mb-4">
+                    User Roles
+                </h5>
+
+                <div class="row g-3">
+
+                    <div class="col-4">
+
+                        <div class="p-3 rounded border text-center">
+
+                            <div class="text-muted small">
+                                Administrators
+                            </div>
+
+                            <div class="fs-4 fw-bold">
+                                {{ admin_users }}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-4">
+
+                        <div class="p-3 rounded border text-center">
+
+                            <div class="text-muted small">
+                                Upload Users
+                            </div>
+
+                            <div class="fs-4 fw-bold">
+                                {{ upload_users }}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-4">
+
+                        <div class="p-3 rounded border text-center">
+
+                            <div class="text-muted small">
+                                Regular Users
+                            </div>
+
+                            <div class="fs-4 fw-bold">
+                                {{ regular_users }}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- Recent Users -->
 
 <div class="card shadow-sm border-0 mt-4">
 
     <div class="card-body">
 
-        <h5 class="fw-bold mb-2">
-            Dashboard Overview
-        </h5>
+        <div class="d-flex justify-content-between align-items-center mb-3">
 
-        <p class="text-muted mb-0">
-            Use the navigation above to explore detailed records,
-            analytics, and report management tools.
-        </p>
+            <h5 class="fw-bold mb-0">
+                Recent Users
+            </h5>
+
+            <a
+                href="{{ url_for('admin.users') }}"
+                class="btn btn-sm btn-outline-primary"
+            >
+                View All
+            </a>
+
+        </div>
+
+
+        {% if recent_users %}
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle mb-0">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Username
+                        </th>
+
+                        <th>
+                            Email
+                        </th>
+
+                        <th>
+                            Role
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Verification
+                        </th>
+
+                        <th>
+                            Created
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for user in recent_users %}
+
+                    <tr>
+
+                        <td>
+
+                            <strong>
+                                {{ user.username }}
+                            </strong>
+
+                            {% if user.username|lower == "admin" %}
+
+                            <span class="badge bg-dark ms-1">
+                                Super Admin
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+                            {{ user.email }}
+                        </td>
+
+
+                        <td>
+
+                            {% if user.role == "admin" %}
+
+                            <span class="badge bg-danger">
+                                Administrator
+                            </span>
+
+                            {% elif user.role == "upload_user" %}
+
+                            <span class="badge bg-primary">
+                                Upload User
+                            </span>
+
+                            {% else %}
+
+                            <span class="badge bg-secondary">
+                                User
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if user.is_active %}
+
+                            <span class="badge bg-success">
+                                Active
+                            </span>
+
+                            {% else %}
+
+                            <span class="badge bg-secondary">
+                                Inactive
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if user.is_verified %}
+
+                            <span class="badge bg-success">
+                                Verified
+                            </span>
+
+                            {% else %}
+
+                            <span class="badge bg-warning text-dark">
+                                Pending
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if user.created_at %}
+
+                                {{ user.created_at.strftime("%d %b %Y") }}
+
+                            {% else %}
+
+                                —
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <div class="text-center py-4 text-muted">
+
+            <i class="bi bi-people fs-2 d-block mb-2"></i>
+
+            No users have been registered yet.
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- Administrative Notice -->
+
+<div class="alert alert-info mt-4 mb-0">
+
+    <div class="d-flex gap-2">
+
+        <i class="bi bi-shield-lock-fill fs-5"></i>
+
+        <div>
+
+            <strong>Administrator Access</strong>
+
+            <div class="small mt-1">
+
+                User accounts and permissions can be managed from
+                the User Management section. The permanent
+                Super Administrator account cannot be modified,
+                deactivated, or deleted.
+
+            </div>
+
+        </div>
 
     </div>
 
@@ -49,4 +574,3 @@ Verbal Autopsy Dashboard
 {% block scripts %}
 
 {% endblock %}
-
