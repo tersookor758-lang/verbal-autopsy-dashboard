@@ -19,7 +19,7 @@ from models import User
 
 from dashboard import dashboard_bp
 from api import api_bp
-from Auth import create_auth_blueprint
+from auth import create_auth_blueprint
 from admin import admin_bp
 
 
@@ -162,17 +162,6 @@ def create_app():
                 "database": "unavailable",
             }), 503
 
-<<<<<<< HEAD
-=======
-    with app.app_context():
-        # Development keeps the convenient create_all workflow. Testing
-        # and production must use Alembic migrations so schema changes are
-        # exercised and tracked consistently.
-        if Config.ENVIRONMENT == "development":
-            db.create_all()
-            create_default_admin()
-
->>>>>>> 73a35265f754d82b1ab11edb7688f2687ea2fa5c
     return app
 
 
