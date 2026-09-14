@@ -14,13 +14,7 @@ from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import text
 
 from config import Config
-from extensions import (
-    db,
-    migrate,
-    login_manager,
-    jwt,
-    limiter,
-)
+from extensions import db, migrate, login_manager, jwt, limiter
 from models import User
 
 from dashboard import dashboard_bp
@@ -33,17 +27,14 @@ csrf = CSRFProtect()
 
 
 def validate_security_config(app):
+    """Validate required application security configuration."""
     Config.validate()
 
     if not app.config.get("SECRET_KEY"):
-        raise RuntimeError(
-            "SECRET_KEY must be configured."
-        )
+        raise RuntimeError("SECRET_KEY must be configured.")
 
     if not app.config.get("JWT_SECRET_KEY"):
-        raise RuntimeError(
-            "JWT_SECRET_KEY must be configured."
-        )
+        raise RuntimeError("JWT_SECRET_KEY must be configured.")
 
 
 def create_default_admin():
@@ -52,7 +43,6 @@ def create_default_admin():
     configured through environment variables.
 
     Production environments never create a default administrator.
-    The administrator password must never be hard-coded in source code.
     """
     if Config.IS_PRODUCTION:
         return
@@ -72,8 +62,7 @@ def create_default_admin():
 
     if len(admin_password) < 12:
         raise RuntimeError(
-            "DEV_ADMIN_PASSWORD must contain at least "
-            "12 characters."
+            "DEV_ADMIN_PASSWORD must contain at least 12 characters."
         )
 
     admin_email = os.getenv(
@@ -102,6 +91,7 @@ def create_default_admin():
 
 
 def create_app():
+    """Create and configure the Flask application."""
     app = Flask(__name__)
 
     app.config.from_object(Config)
@@ -115,17 +105,12 @@ def create_app():
 
     csrf.init_app(app)
 
-    limiter_kwargs = {}
-
     if Config.RATE_LIMIT_STORAGE_URI:
-        limiter_kwargs["storage_uri"] = (
+        app.config["RATELIMIT_STORAGE_URI"] = (
             Config.RATE_LIMIT_STORAGE_URI
         )
 
-    limiter.init_app(
-        app,
-        **limiter_kwargs,
-    )
+    limiter.init_app(app)
 
     CORS(
         app,
@@ -142,13 +127,9 @@ def create_app():
 
     csrf.exempt(api_bp)
 
-    app.register_blueprint(
-        dashboard_bp
-    )
+    app.register_blueprint(dashboard_bp)
 
-    app.register_blueprint(
-        auth_bp
-    )
+    app.register_blueprint(auth_bp)
 
     app.register_blueprint(
         api_bp,
@@ -162,17 +143,13 @@ def create_app():
 
     @app.route("/health")
     def health_check():
+        """Return application and database health status."""
         try:
-            db.session.execute(
-                text("SELECT 1")
-            )
+            db.session.execute(text("SELECT 1"))
 
             return jsonify({
                 "status": "healthy",
-                "application": (
-                    "Verbal Autopsy "
-                    "Outcome Dashboard"
-                ),
+                "application": "Verbal Autopsy Outcome Dashboard",
                 "database": "connected",
             }), 200
 
@@ -181,17 +158,9 @@ def create_app():
 
             return jsonify({
                 "status": "unhealthy",
-                "application": (
-                    "Verbal Autopsy "
-                    "Outcome Dashboard"
-                ),
+                "application": "Verbal Autopsy Outcome Dashboard",
                 "database": "unavailable",
             }), 503
-
-    with app.app_context():
-        if not Config.IS_PRODUCTION:
-            db.create_all()
-            create_default_admin()
 
     return app
 
