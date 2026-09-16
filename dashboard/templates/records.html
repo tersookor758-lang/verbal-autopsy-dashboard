@@ -6,7 +6,11 @@ Records
 
 {% block content %}
 
-<div class="container-fluid py-4">
+<div
+    id="records-page"
+    class="container-fluid py-4"
+    data-all-lgas='{{ all_lgas | tojson | forceescape }}'
+>
 
     <div class="mb-4">
 
@@ -38,7 +42,13 @@ Records
 
 <script>
 
-    window.allLgas = {{ all_lgas | tojson }};
+    const recordsPage =
+        document.getElementById("records-page");
+
+    const allLgas =
+        JSON.parse(recordsPage.dataset.allLgas);
+
+    window.allLgas = allLgas;
 
 </script>
 
